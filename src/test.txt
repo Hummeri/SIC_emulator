@@ -1,1 +1,3 @@
-MUL DIV TIX HELLO SUB SUB n
+MUL val1
+ADD val2
+n

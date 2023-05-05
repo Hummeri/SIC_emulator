@@ -16,6 +16,7 @@ int main(int argc,char *argv[])
     unsigned long Upper =0;
     char program_name[256];
     char instruction_buffer[10];
+    char val_buffer[10];
 
     if(argc!=2) //프로그램이름+입력된 파일이름 말고도 파일이름이 하나 추가될때 이런 에러가 나타난다.
     {
@@ -32,11 +33,47 @@ int main(int argc,char *argv[])
     bool started=1;
     bool is_not_char=0;
     int instruc_char_index=0;
+    int val_buffer_index=0;
+    bool got_word=0;
+    bool get_val=0;
 
+/*
+    ch = getc(fp);
+    if( ch != EOF && isalpha(ch) ){
+        instruction_buffer[instruc_char_index]=ch;
+        instruc_char_index++;
+    }
+*/
     while( (ch = getc(fp))!=EOF ){
 
-        printf("@");
+        putchar(ch);
 
+        if(isalpha(ch) && ch != ' '){
+            if(get_val ==0){
+                instruction_buffer[instruc_char_index]=ch;
+                instruc_char_index++;
+                got_word=1;
+            }
+            else{ //get_val ==1일때, 명령어를 하나 받았으니 인제 변수를 받아야한다.
+                val_buffer[val_buffer_index]=ch;
+                val_buffer_index++;
+            }
+        }
+        else if(ch==' ' && got_word && get_val == 0){
+            instruction_buffer[instruc_char_index]='\0'; //is this code neccessary?
+            if (instruction_find(&instruction_buffer[0]))
+                get_val=1;
+            instruc_char_index=0;
+        }
+        else if(ch==' ' && got_word && get_val ){
+            printf("that was a value\n");
+            get_val=0;
+            got_word=0;
+        }
+        else{
+            printf("just space\n");
+        }
+/*
         if( ch != ' '){
             instruction_buffer[instruc_char_index]=ch;
             instruc_char_index++;
@@ -47,6 +84,7 @@ int main(int argc,char *argv[])
             instruc_char_index=0;
 
         }
+        */
 
     }
     instruction_buffer[instruc_char_index]='\0';
@@ -78,6 +116,7 @@ int main(int argc,char *argv[])
     }
     if (yes==0)
         printf("nope\n");
-    return 0;
+
+    return yes;
 }
 
