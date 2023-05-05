@@ -22,3 +22,44 @@ strcmp 함수 설명 p562
 
 ## fopen() 알아보기
 
+
+            while(instruction_buffer[instruc_char_index] !='\0'){
+                putchar(instruction_buffer[instruc_char_index]);
+                instruc_char_index++;
+            }
+
+    /*
+    while( (ch=getc(fp) ) != EOF )
+    {
+        putc(ch,stdout);
+
+
+        if(is_not_char){
+            if(ch==' '){
+                count++;
+                continue;
+            }
+
+        }
+
+        else if(isupper(ch)){
+            instruction_buffer[instruc_char_index]=ch;
+            instruc_char_index++;
+        }
+        else if(ch==' '){
+            instruction_buffer[instruc_char_index]='\0';
+            printf("%s",instruction_buffer[1]);
+            is_not_char=true;
+            instruc_char_index=0;
+        }
+        else
+            printf("\nSpace!_2\n");
+
+
+
+        count++;
+    }
+    */
+
+       printf("%s에는 %ld개의 문자, %ld개의 대문자가 들어 있습니다.\n",argv[1],count,Upper);
+

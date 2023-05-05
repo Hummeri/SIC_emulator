@@ -33,102 +33,51 @@ int main(int argc,char *argv[])
     bool is_not_char=0;
     int instruc_char_index=0;
 
-    while(1){
-        ch = getc(fp);
-        printf("got it \n");
+    while( (ch = getc(fp))!=EOF ){
 
-        if(ch == EOF){
-            /*
-            instruc_char_index=0;
-            while(instruction_buffer[instruc_char_index] !='\0'){
-                putchar(instruction_buffer[instruc_char_index]);
-                instruc_char_index++;
-            }
-            */
-           /* if(strcmp(&instruction_buffer[0],"ADD") == 0)
-                printf("ADD detected!\n");
-*/
-            break;
-        }
-
-
+        printf("@");
 
         if( ch != ' '){
             instruction_buffer[instruc_char_index]=ch;
             instruc_char_index++;
-            printf("%d",instruc_char_index);
         }
         else {
-            instruction_buffer[instruc_char_index]='\0';
-            instruc_char_index=0;
-
-            while(instruction_buffer[instruc_char_index] !='\0'){
-                putchar(instruction_buffer[instruc_char_index]);
-                instruc_char_index++;
-            }
+            instruction_buffer[instruc_char_index]='\0'; //is this code neccessary?
             instruction_find(&instruction_buffer[0]);
             instruc_char_index=0;
 
-
-            printf("\n");
         }
 
     }
-
-    printf("\n");
-    /*
-    while( (ch=getc(fp) ) != EOF )
-    {
-        putc(ch,stdout);
-
-
-        if(is_not_char){
-            if(ch==' '){
-                count++;
-                continue;
-            }
-
-        }
-
-        else if(isupper(ch)){
-            instruction_buffer[instruc_char_index]=ch;
-            instruc_char_index++;
-        }
-        else if(ch==' '){
-            instruction_buffer[instruc_char_index]='\0';
-            printf("%s",instruction_buffer[1]);
-            is_not_char=true;
-            instruc_char_index=0;
-        }
-        else
-            printf("\nSpace!_2\n");
+    instruction_buffer[instruc_char_index]='\0';
+    instruction_find(&instruction_buffer[0]); //flushes last buffer
 
 
 
-        count++;
-    }
-    */
     fclose(fp); //얘를 않쓰면 어떻게 되지?
 
 
-    printf("%s에는 %ld개의 문자, %ld개의 대문자가 들어 있습니다.\n",argv[1],count,Upper);
+
 
     return 0;
 }
 
  int instruction_find(char *check){
 
-    const char Instruction_set[3][5] = {"ADD","SUB","MUL","DIV"} ;
+    const char Instruction_set[25][5] = {"ADD","SUB","MUL","DIV","AND","OR","LDA","LDCH","LDL","LDX","STA","STCH","STL","STX","COMP","TIX","J","JEQ","JGT","JLT","JSUB","RSUB","TD","RD","WD"} ;
 
 
+    bool yes =0;
 
-    if(strcmp(check,&Instruction_set[0][0]) == 0)
-        printf(" ADD detected!\n");
-
-
-
-
-
+    for(int x=0; x<25; x++){
+        if(strcmp(check,&Instruction_set[x][0]) == 0){
+            printf(" %s detected!\n", &Instruction_set[x][0]) ;
+            yes =1;
+            break;
+        }
+    }
+    if (yes==0)
+        printf("nope\n");
     return 0;
 }
 
