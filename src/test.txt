@@ -1,3 +1,2 @@
 MUL val1
 ADD val2
-n
