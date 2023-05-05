@@ -30,24 +30,48 @@ int main(int argc,char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    bool started=1;
-    bool is_not_char=0;
     int instruc_char_index=0;
     int val_buffer_index=0;
-    bool got_word=0;
+    bool valid_instruc=0;
     bool get_val=0;
 
-/*
-    ch = getc(fp);
-    if( ch != EOF && isalpha(ch) ){
-        instruction_buffer[instruc_char_index]=ch;
-        instruc_char_index++;
-    }
-*/
+
     while( (ch = getc(fp))!=EOF ){
 
         putchar(ch);
+        if( isalnum(ch) ){ //isalnum 은 스페이스나 \n을 만나면 멈춘다
+            if(valid_instruc == 0 && get_val ==0){//일단 instruc char index 에 받는다
+                instruction_buffer[instruc_char_index]=ch;
+                instruc_char_index++;
+            }
+            if(valid_instruc == 1 && get_val==0){
+                val_buffer[val_buffer_index]=ch;
+                val_buffer_index++;
+            }
 
+        }
+        else{ //여기서 버퍼를 검사해서 기존에 저장된 명령어 중에 있는지 찾아본다.
+            instruction_buffer[instruc_char_index]='\0'; //버퍼속의 문자를 문자열로 만듬
+            val_buffer[val_buffer_index]='\0';
+
+            if (instruction_find(&instruction_buffer[0]) && get_val==0 ){
+                valid_instruc=1;
+                get_val=1;
+                instruc_char_index=0;
+            }
+            else if(valid_instruc && get_val){
+                valid_instruc=0;
+                get_val=0;
+                val_buffer_index=0;
+                printf("that was a value\n");
+            }
+            else{
+                printf("that was not a valid instruction\n");
+            }
+            instruc_char_index=0;
+        }
+
+        /*
         if(isalpha(ch) && ch != ' '){
             if(get_val ==0){
                 instruction_buffer[instruc_char_index]=ch;
@@ -72,17 +96,6 @@ int main(int argc,char *argv[])
         }
         else{
             printf("just space\n");
-        }
-/*
-        if( ch != ' '){
-            instruction_buffer[instruc_char_index]=ch;
-            instruc_char_index++;
-        }
-        else {
-            instruction_buffer[instruc_char_index]='\0'; //is this code neccessary?
-            instruction_find(&instruction_buffer[0]);
-            instruc_char_index=0;
-
         }
         */
 
@@ -115,7 +128,7 @@ int main(int argc,char *argv[])
         }
     }
     if (yes==0)
-        printf("nope\n");
+        printf("no i find\n");
 
     return yes;
 }
