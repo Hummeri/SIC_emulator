@@ -5,7 +5,7 @@
 #include<ctype.h> //used for isupper()
 #include<stdbool.h> //for bool flags
 
-int instruction_find(void);
+int instruction_find(char *check);
 //int program_initiate( char*program_name1,);
 
 int main(int argc,char *argv[])
@@ -36,12 +36,18 @@ int main(int argc,char *argv[])
     while(1){
         ch = getc(fp);
         printf("got it \n");
+
         if(ch == EOF){
+            /*
             instruc_char_index=0;
             while(instruction_buffer[instruc_char_index] !='\0'){
                 putchar(instruction_buffer[instruc_char_index]);
                 instruc_char_index++;
             }
+            */
+           /* if(strcmp(&instruction_buffer[0],"ADD") == 0)
+                printf("ADD detected!\n");
+*/
             break;
         }
 
@@ -55,12 +61,15 @@ int main(int argc,char *argv[])
         else {
             instruction_buffer[instruc_char_index]='\0';
             instruc_char_index=0;
+
             while(instruction_buffer[instruc_char_index] !='\0'){
                 putchar(instruction_buffer[instruc_char_index]);
                 instruc_char_index++;
             }
+            instruction_find(&instruction_buffer[0]);
             instruc_char_index=0;
-            //printf("%s",&instruction_buffer[0]);
+
+
             printf("\n");
         }
 
@@ -101,19 +110,20 @@ int main(int argc,char *argv[])
     */
     fclose(fp); //얘를 않쓰면 어떻게 되지?
 
+
     printf("%s에는 %ld개의 문자, %ld개의 대문자가 들어 있습니다.\n",argv[1],count,Upper);
 
     return 0;
 }
 
- int instruction_find(void){
+ int instruction_find(char *check){
 
-    const char Instruction_set[2][5] = {"ADD","SUB"} ;
+    const char Instruction_set[3][5] = {"ADD","SUB","MUL","DIV"} ;
 
 
 
-    if(strcmp(&Instruction_set[0][0],"ADD") == 0)
-        printf("!");
+    if(strcmp(check,&Instruction_set[0][0]) == 0)
+        printf(" ADD detected!\n");
 
 
 
