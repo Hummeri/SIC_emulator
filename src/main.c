@@ -37,6 +37,7 @@ int main(int argc,char *argv[])
     struct Word Program[50];
     //struct Word temp;
     int Word_line=0;
+    int Word_count=0;
     int word_struct_index=0;
     int instruc_char_index=0;
     char instruction_buffer[10];
@@ -57,7 +58,8 @@ int main(int argc,char *argv[])
             Program[word_struct_index].type = instruction_find(&instruction_buffer[0]);
             Program[word_struct_index].line = Word_line;
             word_struct_index ++;
-            instruc_char_index=0;
+            Word_count++;
+            instruc_char_index=0; // instruction_buffer의 내용물을 치우지 않고 그냥 인덱스를 0으로 만든다, strcmp 같은 함수들이 '\0'을 무시하고
         }
         //ch가 개행 문자 일때 struct word에 저장한 텍스트 버퍼가 명령어인지, 아닌지 검사후 struct word에 저장.
         else{
@@ -67,6 +69,7 @@ int main(int argc,char *argv[])
             Program[word_struct_index].line = Word_line;
             word_struct_index ++;
             Word_line ++;
+            Word_count++;
             instruc_char_index=0;
             //for(int i=0; i<10;i++)
         }
@@ -74,14 +77,14 @@ int main(int argc,char *argv[])
 
     }
 
-for (int index=0; index < 4; index++){
+for (int index=0; index <Word_count; index++){
     printf("words: %s type: %d, line: %d\n",Program[index].words, Program[index].type , Program[index].line);
 }
 
     /*
     instruction_buffer[instruc_char_index]='\0';
     instruction_find(&instruction_buffer[0]); //flushes last buffer
-*/
+*/ //얘 없어도 잘 돌아가네? 아마 '\n'을 감자하는 걸 넣어서 그런것 같다.
     fclose(fp); //얘를 않쓰면 어떻게 되지?
 
     return 0;
