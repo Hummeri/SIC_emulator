@@ -58,7 +58,7 @@ int main(int argc,char *argv[])
                 not_empty_space=1;
                 continue;
         }
-        else if(ch==' ' | ch=='\t' & not_empty_space ){ //ch가 스페이스 일때,
+        else if(ch==' ' || ch=='\t' && not_empty_space ){ //ch가 스페이스 일때,
             instruction_buffer[instruc_char_index]='\0'; //버퍼속의 문자를 문자열로 만듬
             strcpy(Program[word_struct_index].words , &instruction_buffer[0]);
 
