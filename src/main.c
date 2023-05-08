@@ -1,4 +1,3 @@
-
 #include<stdio.h>
 #include<stdlib.h> //used for fopen
 #include<string.h> //used for strcmp() and strcmp()
@@ -50,6 +49,13 @@ int main(int argc,char *argv[])
         if( isalnum(ch) ){ //isalnum 은 스페이스나 \n을 만나면 멈춘다
             instruction_buffer[instruc_char_index]=ch;
                 instruc_char_index++;
+        }
+        else if(ispunct(ch) ){ // ' 같은 문자들을 인식하게 한다.
+            instruction_buffer[instruc_char_index]=ch;
+                instruc_char_index++;
+                // putchar(ch);
+                // printf("here!");
+                continue;
         }
         else if(ch==' '){ //ch가 스페이스 일때,
             instruction_buffer[instruc_char_index]='\0'; //버퍼속의 문자를 문자열로 만듬
