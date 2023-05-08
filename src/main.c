@@ -40,6 +40,7 @@ int main(int argc,char *argv[])
     int word_struct_index=0;
     int instruc_char_index=0;
     char instruction_buffer[10];
+    bool not_empty_space=0;
 
 
     while( (ch = getc(fp))!=EOF ){
@@ -49,15 +50,15 @@ int main(int argc,char *argv[])
         if( isalnum(ch) ){ //isalnum 은 스페이스나 \n을 만나면 멈춘다
             instruction_buffer[instruc_char_index]=ch;
                 instruc_char_index++;
+                not_empty_space=1;
         }
         else if(ispunct(ch) ){ // ' 같은 문자들을 인식하게 한다.
             instruction_buffer[instruc_char_index]=ch;
                 instruc_char_index++;
-                // putchar(ch);
-                // printf("here!");
+                not_empty_space=1;
                 continue;
         }
-        else if(ch==' '){ //ch가 스페이스 일때,
+        else if(ch==' ' & not_empty_space ){ //ch가 스페이스 일때,
             instruction_buffer[instruc_char_index]='\0'; //버퍼속의 문자를 문자열로 만듬
             strcpy(Program[word_struct_index].words , &instruction_buffer[0]);
 
@@ -66,9 +67,10 @@ int main(int argc,char *argv[])
             word_struct_index ++;
             Word_count++;
             instruc_char_index=0; // instruction_buffer의 내용물을 치우지 않고 그냥 인덱스를 0으로 만든다, strcmp 같은 함수들이 '\0'을 무시하고
+            not_empty_space=0;
         }
         //ch가 개행 문자 일때 struct word에 저장한 텍스트 버퍼가 명령어인지, 아닌지 검사후 struct word에 저장.
-        else{
+        else if(ch == '\n'){
             instruction_buffer[instruc_char_index]='\0'; //버퍼속의 문자를 문자열로 만듬
             strcpy(Program[word_struct_index].words , &instruction_buffer[0]);
             Program[word_struct_index].type = instruction_find(&instruction_buffer[0]);
@@ -77,7 +79,7 @@ int main(int argc,char *argv[])
             Word_line ++;
             Word_count++;
             instruc_char_index=0;
-            //for(int i=0; i<10;i++)
+            not_empty_space=0;
         }
 
 
