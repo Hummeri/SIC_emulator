@@ -21,8 +21,6 @@ int main(int argc,char *argv[])
     unsigned long count =0;
     unsigned long Upper =0;
     char program_name[256];
-    char instruction_buffer[10];
-    char val_buffer[10];
 
     //프로그램이름+입력된 파일이름 말고도 파일이름이 하나 추가될때 이런 에러가 나타난다.
     if(argc!=2) {
@@ -35,16 +33,17 @@ int main(int argc,char *argv[])
         exit(EXIT_FAILURE);
     }
 
-    int instruc_char_index=0;
-    int val_buffer_index=0;
-    bool valid_instruc=0;
-    bool get_val=0;
+
     struct Word Program[50];
     //struct Word temp;
     int Word_line=0;
     int word_struct_index=0;
+    int instruc_char_index=0;
+    char instruction_buffer[10];
+
 
     while( (ch = getc(fp))!=EOF ){
+
 
         putchar(ch);
         if( isalnum(ch) ){ //isalnum 은 스페이스나 \n을 만나면 멈춘다
@@ -58,6 +57,7 @@ int main(int argc,char *argv[])
             Program[word_struct_index].type = instruction_find(&instruction_buffer[0]);
             Program[word_struct_index].line = Word_line;
             word_struct_index ++;
+            instruc_char_index=0;
         }
         //ch가 개행 문자 일때 struct word에 저장한 텍스트 버퍼가 명령어인지, 아닌지 검사후 struct word에 저장.
         else{
@@ -67,14 +67,15 @@ int main(int argc,char *argv[])
             Program[word_struct_index].line = Word_line;
             word_struct_index ++;
             Word_line ++;
-
+            instruc_char_index=0;
+            //for(int i=0; i<10;i++)
         }
 
 
     }
 
-for (int index=0; index < 50; index++){
-    printf("words: %s\n type: %d,",Program[index].words, Program[index].type );
+for (int index=0; index < 4; index++){
+    printf("words: %s type: %d, line: %d\n",Program[index].words, Program[index].type , Program[index].line);
 }
 
     /*
