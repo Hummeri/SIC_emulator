@@ -86,26 +86,23 @@ int main(int argc,char *argv[])
     }
 
 for (int index=0; index <Word_count; index++){
-    printf("words: %s type: %d, line: %d\n",Program[index].words, Program[index].type , Program[index].line);
+    printf("words:%s: type: %d, line: %d\n",Program[index].words, Program[index].type , Program[index].line);
 }
 
-    /*
-    instruction_buffer[instruc_char_index]='\0';
-    instruction_find(&instruction_buffer[0]); //flushes last buffer
-*/ //얘 없어도 잘 돌아가네? 아마 '\n'을 감자하는 걸 넣어서 그런것 같다.
-    fclose(fp); //얘를 않쓰면 어떻게 되지?
 
+
+    fclose(fp); //얘를 않쓰면 어떻게 되지?
     return 0;
 }
 
  int instruction_find(char *check){
 
-    const char Instruction_set[25][5] = {"ADD","SUB","MUL","DIV","AND","OR","LDA","LDCH","LDL","LDX","STA","STCH","STL","STX","COMP","TIX","J","JEQ","JGT","JLT","JSUB","RSUB","TD","RD","WD"} ;
+    const char Instruction_set[26][5] = {"ADD","SUB","MUL","DIV","AND","OR","LDA","LDCH","LDL","LDX","STA","STCH","STL","STX","COMP","TIX","J","JEQ","JGT","JLT","JSUB","RSUB","TD","RD","WD",""} ;
 
     int for_return=0;
 
 
-    for(int x=0; x<25; x++){
+    for(int x=0; x<26; x++){
         if(strcmp(check,&Instruction_set[x][0]) == 0){
             //printf(" %s detected!\n", &Instruction_set[x][0]) ;
             for_return = x+1;
