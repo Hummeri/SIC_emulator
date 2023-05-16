@@ -13,6 +13,9 @@ struct Word{
     int line; //몇 번째 줄에 값이 있는지 나타낸다.
     };
 int assembler(struct Word *keywords,int index_max); //make sure that functions using struct is declared after the declaration of struct
+
+bool num_check(char *address);
+
 int main(int argc,char *argv[])
 {
     int ch; //왜 ch은 int형인가?
@@ -102,12 +105,20 @@ int assembler(struct Word *keywords,int index_max){
 
     if(keywords[0].type == 0)
         if(strcmp(keywords[1].words,"START")==0 && keywords[0].line == keywords[1].line)
-            if(keywords[1].line == keywords[2].line && isdigit(keywords[2].words[0]) ) //needs special num check that numerates through string.
-                printf("valid start");
-
+            if(keywords[1].line == keywords[2].line  && num_check( &keywords[2].words[0]) ) //needs special num check that numerates through string.
+                printf("valid start\n");
+    else
+        printf("not valid start\n");
     return 0;
 }
 
+bool num_check(char *address){
+    for(int i=0; address[i] != '\0'; i++)
+        if(isdigit( address[i])==0 ) // isdigit 값이 0이면 해당 값이 숫자가 아니라는 소리이다
+            return 0;
+
+    return 1;
+}
 
  int instruction_find(char *check){
 
