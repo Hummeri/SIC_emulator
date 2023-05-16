@@ -1,4 +1,4 @@
-#include<stdio.h>
+ #include<stdio.h>
 #include<stdlib.h> //used for fopen
 #include<string.h> //used for strcmp() and strcmp()
 #include<ctype.h> //used for isupper()
@@ -12,7 +12,7 @@ struct Word{
     int type; // 0이면 value, 1~25 사이의 값은 명령어, 26은 라벨, 27 제목 값이다.
     int line; //몇 번째 줄에 값이 있는지 나타낸다.
     };
-
+int assembler(struct Word *keywords,int index_max); //make sure that functions using struct is declared after the declaration of struct
 int main(int argc,char *argv[])
 {
     int ch; //왜 ch은 int형인가?
@@ -69,8 +69,8 @@ int main(int argc,char *argv[])
             instruc_char_index=0; // instruction_buffer의 내용물을 치우지 않고 그냥 인덱스를 0으로 만든다, strcmp 같은 함수들이 '\0'을 무시하고
             not_empty_space=0;
         }
-        //ch가 개행 문자 일때 struct word에 저장한 텍스트 버퍼가 명령어인지, 아닌지 검사후 struct word에 저장.
-        else if(ch == '\n'){
+        //ch가 개행 문자 일때 struct word에 저장한 텍스트 버퍼가 명령어인지, 아닌지 검사후 struct word.type에 검사값 저장.
+        else if(ch == '\n' && not_empty_space){ // && not_empty_space을 빈 여백의 코드를 그냥 걸러낸다. 주석 달기 기능과, 사용자의 입장에서 어떤 줄에서 에러가 발생 했는지 나타내려면 저걸 없애고, 키워드을 정리하는 프로그램이 얘를 처리해야 한다.
             instruction_buffer[instruc_char_index]='\0'; //버퍼속의 문자를 문자열로 만듬
             strcpy(Program[word_struct_index].words , &instruction_buffer[0]);
             Program[word_struct_index].type = instruction_find(&instruction_buffer[0]);
@@ -89,20 +89,34 @@ for (int index=0; index <Word_count; index++){
     printf("words:%s: type: %d, line: %d\n",Program[index].words, Program[index].type , Program[index].line);
 }
 
-
-
     fclose(fp); //얘를 않쓰면 어떻게 되지?
+
+    putchar('\n');
+    assembler(&Program[0],Word_count);
+
     return 0;
 }
 
+int assembler(struct Word *keywords,int index_max){
+    //title and start and memory start address check
+
+    if(keywords[0].type == 0)
+        if(strcmp(keywords[1].words,"START")==0 && keywords[0].line == keywords[1].line)
+            if(keywords[1].line == keywords[2].line && isdigit(keywords[2].words[0]) ) //needs special num check that numerates through string.
+                printf("valid start");
+
+    return 0;
+}
+
+
  int instruction_find(char *check){
 
-    const char Instruction_set[26][5] = {"ADD","SUB","MUL","DIV","AND","OR","LDA","LDCH","LDL","LDX","STA","STCH","STL","STX","COMP","TIX","J","JEQ","JGT","JLT","JSUB","RSUB","TD","RD","WD",""} ;
+    const char Instruction_set[30][5] = {"ADD","SUB","MUL","DIV","AND","OR","LDA","LDCH","LDL","LDX","STA","STCH","STL","STX","COMP","TIX","J","JEQ","JGT","JLT","JSUB","RSUB","TD","RD","WD","END","BYTE","WORD","RESB","RESW"} ;
 
     int for_return=0;
 
 
-    for(int x=0; x<26; x++){
+    for(int x=0; x<30; x++){
         if(strcmp(check,&Instruction_set[x][0]) == 0){
             //printf(" %s detected!\n", &Instruction_set[x][0]) ;
             for_return = x+1;
