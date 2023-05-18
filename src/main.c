@@ -98,17 +98,31 @@ for (int index=0; index <Word_count; index++){
     assembler(&Program[0],Word_count);
 
     return 0;
-}
+} //end of main
 
 int assembler(struct Word *keywords,int index_max){
     //title and start and memory start address check
-
     if(keywords[0].type == 0)
         if(strcmp(keywords[1].words,"START")==0 && keywords[0].line == keywords[1].line)
             if(keywords[1].line == keywords[2].line  && num_check( &keywords[2].words[0]) ) //needs special num check that numerates through string.
                 printf("valid start\n");
     else
         printf("not valid start\n");
+
+    int index =3;
+
+    // 라벨, 명령어, 오퍼랜드, 3개로 이루어져 있는 명령어 인지 검사한다.
+    if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
+        printf("instruction line with label\n");
+    }
+    else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
+        printf("instruction line without label\n");
+    }
+    else{
+        printf("unknown instruction format error at line: %d", keywords[index].line);
+    }
+
+
     return 0;
 }
 
