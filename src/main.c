@@ -111,16 +111,25 @@ int assembler(struct Word *keywords,int index_max){
 
     int index =3;
 
-    // 라벨, 명령어, 오퍼랜드, 3개로 이루어져 있는 명령어 인지 검사한다.
-    if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
+
+
+    if(keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line && keywords[index+2].line == keywords[index+3].line){ // 같은 줄에 키워드가 네개 에러 발생!
+        printf("instruction format error at line: %d more than three keywords\n", keywords[index].line);
+    }
+    else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
         printf("instruction line with label\n");
+        // 변수 선언문도 라벨이랑 같은 3개의 문자 형식을 가지고 있으나, word.type에서 다른 형식을 지니고 있는 것이니, 여기서 명령어 타입 검사해서 변수 선언 키워드가 있으면 여기 있는 줄이 변수가 있는 줄로 간주한다.
+        //변수들의 타입은 25번이면 END, 그후 30번까지가 변수 영역에 쓰이는 키워드이다.
+
+        if( keywords[index].type == 0 && keywords[index+1].type > 25 && keywords[index+1].type <= 30 && num_check(&keywords[index+2].words[0]))
+            printf("properly declared variable\n");
+
+
     }
     else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
         printf("instruction line without label\n");
     }
-    else{
-        printf("unknown instruction format error at line: %d", keywords[index].line);
-    }
+
 
 
     return 0;
@@ -136,7 +145,7 @@ bool num_check(char *address){
 
  int instruction_find(char *check){
 
-    const char Instruction_set[30][5] = {"ADD","SUB","MUL","DIV","AND","OR","LDA","LDCH","LDL","LDX","STA","STCH","STL","STX","COMP","TIX","J","JEQ","JGT","JLT","JSUB","RSUB","TD","RD","WD","END","BYTE","WORD","RESB","RESW"} ;
+    const char Instruction_set[30][5] = {"ADD","SUB","MUL","DIV","AND","OR","LDA","LDCH","LDL","LDX","STA","STCH","STL","STX","COMP","TIX","J","JEQ","JGT","JLT","JSUB","RSUB","TD","RD","WD","END","BYTE","WORD"/* WORD 28*/,"RESB","RESW"} ;
 
     int for_return=0;
 
