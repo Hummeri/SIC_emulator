@@ -1,5 +1,5 @@
  #include<stdio.h>
-#include<stdlib.h> //used for fopen
+#include<stdlib.h> //used for fopen and mallac() and free()
 #include<string.h> //used for strcmp() and strcmp()
 #include<ctype.h> //used for isupper()
 #include<stdbool.h> //for bool flags
@@ -15,6 +15,8 @@ struct Word{
 int assembler(struct Word *keywords,int index_max); //make sure that functions using struct is declared after the declaration of struct
 
 bool num_check(char *address);
+
+char * make_var(int how_many_word);
 
 int main(int argc,char *argv[])
 {
@@ -133,10 +135,29 @@ int assembler(struct Word *keywords,int index_max){
             index +=2;
         }
 
+
     }
+
+    char* ptr;
+    ptr = make_var(1);
+    //*ptr = 0;
+    *ptr = 0;
+    //printf("%d");
+
+    printf("%d\n",*ptr);
+    *ptr = 255;
+    printf("%d\n",*ptr);
+    free(ptr);
+
 
 
     return 0;
+}
+
+char * make_var(int how_many_word){
+    char *pointer;
+    pointer = (char*)malloc(how_many_word*8);
+    return pointer;
 }
 
 bool num_check(char *address){
