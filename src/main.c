@@ -3,8 +3,11 @@
 #include<string.h> //used for strcmp() and strcmp()
 #include<ctype.h> //used for isupper()
 #include<stdbool.h> //for bool flags
+
 #define WORD_MAX_LENGTH 20 //used for max character length of title and variable names.
 #define MAX_VARIABLE_COUNT 20 //최대 변수 개수
+#define MAX_LABEL_COUNT 20 //라벨 최대 개수
+#define MAX_PROGRAM_INSTRUCTIONS 100 // 명령어 최대 개수
 
 int instruction_find(char *check);
 //int program_initiate( char*program_name1,);
@@ -17,13 +20,19 @@ struct Word{
 int assembler(struct Word *keywords,int index_max); //make sure that functions using struct is declared after the declaration of struct
 
 struct variable{
-    char words[WORD_MAX_LENGTH];
+    char name[WORD_MAX_LENGTH];
     char *ptr;
 };
 
 struct executable{
     int instruction;
     int variable_index;
+    int label_index;
+};
+
+struct label{
+    char name[WORD_MAX_LENGTH];
+    int to_here;
 };
 bool num_check(char *address);
 short data_check(char *address2);
@@ -125,7 +134,7 @@ int assembler(struct Word *keywords,int index_max){
             if(keywords[1].line == keywords[2].line  && num_check( &keywords[2].words[0]) ){
                 printf("valid start\n");
                 strcpy(&title[0],keywords[0].words);
-                printf("%c\n",title[0]);
+                //printf("%c\n",title[0]);
             }
     else
         printf("not valid start\n");
@@ -154,30 +163,11 @@ int assembler(struct Word *keywords,int index_max){
             index +=2;
         }
     }
-    /*
-    char* ptr;
-    ptr = make_var(1);
-    //*ptr = 0;
-    *ptr = 0;
-    //printf("%d");
 
-    printf("%d\n",*ptr);
-    *ptr = 255;
-    printf("%d\n",*ptr);
-    *ptr = 'a';
-    printf("%d\n",*ptr);
-    free(ptr);
-
-    */
-
-    /*
-    printf("here %s\n",keywords[index+1].words);
-    printf("words:%s: type: %d, line: %d\n",keywords[index].words, keywords[index].type , keywords[index].line);
-    */
     int var_index_start = index;
     struct variable variable_list[MAX_VARIABLE_COUNT];
     int var_index=0;
-    printf("index max %d\n",index_max);
+    printf("index max %d\n discovered variables:\n",index_max);
     while( strcmp(keywords[index].words,"END") != 0 && index < index_max){
         //printf("END not found at index %d\n",index);
         index++;
@@ -194,7 +184,7 @@ int assembler(struct Word *keywords,int index_max){
         if( keywords[index].line == keywords[index+1].line && keywords[index+1].line== keywords[index+2].line
 && keywords[index].type == 0 && keywords[index+1].type > 25 && keywords[index+1].type <= 30 && data_check(&keywords[index+2].words[0])){
             printf("valid variable ");
-            strcpy( variable_list[var_index].words, keywords[index].words);
+            strcpy( variable_list[var_index].name, keywords[index].words);
 
             if( keywords[index+1].type == 27) { //변수 타입 BYTE 얘는 CHAR1 BYTE C'Z' 같은 형식을 사용할 수 있으니 저 c와 '를 검사하는 걸 넣어야한다.
                 variable_list[var_index].ptr = make_var(1); //1 바이트, 8비트의 크기를 가진 메모리 주소를 리턴한다.
@@ -220,6 +210,58 @@ int assembler(struct Word *keywords,int index_max){
         index +=3;
         var_index++;
         }
+    int variable_total_count = var_index;
+    printf("variable_total_count: %d \n", variable_total_count);
+
+    index =3;
+
+        // 명령어 집합하기
+    struct label label_list[MAX_LABEL_COUNT];
+    struct executable executable_list[MAX_PROGRAM_INSTRUCTIONS];
+    int executable_index=0;
+    int label_index=0;
+    printf("%d\n",index_max);
+        while( index < var_index_start) {
+            if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
+                printf("instruction line with label\n");
+                strcpy(&label_list[label_index].name[0], keywords[index].words);
+                label_index++;
+
+                executable_list[executable_index].instruction = keywords[index+1].type;
+
+                bool success_flag=0;
+                for(int i=0; i<variable_total_count; i++){
+                    if( strcmp(&variable_list[i].name[0], keywords[index+2].words) == 0 ){
+                        executable_list[executable_index].variable_index = i;
+                        success_flag =1;
+                    }
+                }
+
+                if(success_flag ==0){
+                    printf("variable name not declared! ERROR line: %d\n",keywords[index+2].line);
+                }
+
+                index += 3;
+            }
+            else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
+                printf("instruction line without label\n");
+
+
+                executable_list[executable_index].instruction = keywords[index+1].type;
+
+                for(int i=0; i<variable_total_count; i++){
+                    if( strcmp(&variable_list[i].name[0], keywords[index+2].words) == 0 ){
+                        executable_list[executable_index].variable_index = i;
+                        success_flag =1;
+                    }
+                }
+
+                if(success_flag ==0){
+                    printf("variable name not declared! ERROR line: %d\n",keywords[index+2].line);
+                }
+                index +=2;
+            }
+    }
 
     return 0;
 }

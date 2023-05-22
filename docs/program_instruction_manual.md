@@ -70,3 +70,24 @@ strcmp 함수 설명 p562
 
        printf("%s에는 %ld개의 문자, %ld개의 대문자가 들어 있습니다.\n",argv[1],count,Upper);
 
+           /*
+    char* ptr;
+    ptr = make_var(1);
+    //*ptr = 0;
+    *ptr = 0;
+    //printf("%d");
+
+    printf("%d\n",*ptr);
+    *ptr = 255;
+    printf("%d\n",*ptr);
+    *ptr = 'a';
+    printf("%d\n",*ptr);
+    free(ptr);
+
+    */
+
+    /*
+    printf("here %s\n",keywords[index+1].words);
+    printf("words:%s: type: %d, line: %d\n",keywords[index].words, keywords[index].type , keywords[index].line);
+    */
+
