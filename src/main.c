@@ -114,7 +114,7 @@ int main(int argc,char *argv[])
 for (int index=0; index <Word_count; index++){
     printf("words:%s: type: %d, line: %d\n",Program[index].words, Program[index].type , Program[index].line);
 }
-    printf("\n %d",Word_count);
+    //printf("\n %d",Word_count);
 
     fclose(fp); //얘를 않쓰면 어떻게 되지?
 
@@ -167,7 +167,7 @@ int assembler(struct Word *keywords,int index_max){
     int var_index_start = index;
     struct variable variable_list[MAX_VARIABLE_COUNT];
     int var_index=0;
-    printf("index max %d\n discovered variables:\n",index_max);
+    printf("index max %d\n",index_max);
     while( strcmp(keywords[index].words,"END") != 0 && index < index_max){
         //printf("END not found at index %d\n",index);
         index++;
@@ -272,15 +272,24 @@ int assembler(struct Word *keywords,int index_max){
     int label_total_count = label_index;
     int executable_total_count=executable_index;
     for(int i=0;i<executable_total_count; i++){
-        if(executable_list[i].label_index ==0){ //두줄 짜리 명령어
+        if(executable_list[i].label_index ==0){ //두 줄 짜리 명령어
             printf(" instruction type: %d variable index: %d\n",executable_list[i].instruction,executable_list[i].variable_index);
         }
-        else{
+        else{ //라벨이 있는 세 줄짜리 명령어
             printf("label index: %d index in label: %d  instruction type: %d variable index: %d\n",executable_list[i].label_index,label_list[executable_list[i].label_index-1].to_here,executable_list[i].instruction,executable_list[i].variable_index);
             // label_list[executable_list[i].label_index-1].to_here 에서 보면 executable_list[i].label_index값에 -1이 들어가 있는데, 이는 struct executable가 label_index값이 0일때 라벨이 없다고 판단해서 그렇다.
         }
     }
+    //인제 프로그램을 실행하는 코드
+    //먼저, 레지스터를 생성한다.
+    char *R_a = make_var(3); //accumulator register
+    char *R_x = make_var(3); //index register
+    char *R_l = make_var(3); //linkage register
+    int PC; // program counter
+    int SW;// status word? 애 이름 제대로 알아내기
+    for(int i=0;i<executable_total_count;i++){
 
+    }
     return 0;
 }
 
