@@ -176,7 +176,7 @@ int assembler(struct Word *keywords,int index_max){
         printf("ERROR no END keyword found!\n");
     }
 
-    int var_index_max = index;
+    int var_index_max = index; // 변수 배열을 생성하는 코드
     index = var_index_start;
     //printf("words:%s: type: %d, line: %d\n",keywords[index].words, keywords[index].type , keywords[index].line);
 
@@ -190,21 +190,21 @@ int assembler(struct Word *keywords,int index_max){
                 variable_list[var_index].ptr = make_var(1); //1 바이트, 8비트의 크기를 가진 메모리 주소를 리턴한다.
                 if( data_check( &keywords[index+2].words[0] ) == 2){ // 문자 저장
                     *variable_list[var_index].ptr =keywords[index+2].words[2];
-                    printf("BYTE: %c\n", *variable_list[var_index].ptr);
+                    printf("BYTE: name:%s value: %c\n",variable_list[var_index].name ,*variable_list[var_index].ptr);
                 }
             }
             else if(keywords[index+1].type == 28){  //변수 타입 WORD
                 variable_list[var_index].ptr = make_var(3);
                 *variable_list[var_index].ptr = atoi(&keywords[index+2].words[0]); //the atoi function requires const str* type, but somehow still works
-                printf("WORD: %d\n", *variable_list[var_index].ptr);
+                printf("WORD, name:%s value: %d\n",variable_list[var_index].name ,*variable_list[var_index].ptr);
             }
             else if(keywords[index+1].type == 29) { //RESB
                 variable_list[var_index].ptr = make_var( atoi(&keywords[index+2].words[0]) );
-                printf("RESB: %d\n", *variable_list[var_index].ptr);
+                printf("RESB, name:%s\n", variable_list[var_index].name);
                 }
             else if(keywords[index+1].type == 30){ // RESW
                 variable_list[var_index].ptr = make_var( atoi(&keywords[index+2].words[0])*3 );
-                printf("RESW: %d\n", *variable_list[var_index].ptr);
+                printf("RESW: name:%s", variable_list[var_index].name);
                 }
             }
         index +=3;
@@ -220,47 +220,65 @@ int assembler(struct Word *keywords,int index_max){
     struct executable executable_list[MAX_PROGRAM_INSTRUCTIONS];
     int executable_index=0;
     int label_index=0;
-    printf("%d\n",index_max);
+    //printf("%d\n",index_max);
         while( index < var_index_start) {
             if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
                 printf("instruction line with label\n");
-                strcpy(&label_list[label_index].name[0], keywords[index].words);
+                strcpy(&label_list[label_index].name[0], keywords[index].words);  //라벨 저장
+                label_list[label_index].to_here = executable_index;
                 label_index++;
-
+                executable_list[executable_index].label_index= label_index;// struct executable에서 label_index이 0이면 라벨이 없다고 판단한다. 따라서 1을 더한 값을 여기에다가 저장한다. 나중에 라벨을 찾을 때는 저 인덱스 값을 1 빼준 다음 액세스 해야한다.
                 executable_list[executable_index].instruction = keywords[index+1].type;
 
                 bool success_flag=0;
                 for(int i=0; i<variable_total_count; i++){
-                    if( strcmp(&variable_list[i].name[0], keywords[index+2].words) == 0 ){
+                    if( strcmp(&variable_list[i].name[0], keywords[index+2].words) == 0 ){ // 명령어 줄에 있는 변수 이름이 선언된었는지 확인한다.
                         executable_list[executable_index].variable_index = i;
                         success_flag =1;
+                        break;
                     }
                 }
-
                 if(success_flag ==0){
                     printf("variable name not declared! ERROR line: %d\n",keywords[index+2].line);
                 }
 
                 index += 3;
+                executable_index++;
             }
             else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
                 printf("instruction line without label\n");
-
-
-                executable_list[executable_index].instruction = keywords[index+1].type;
-
+                executable_list[executable_index].label_index=0;
+                executable_list[executable_index].instruction = keywords[index].type;
+                bool success_flag=0;
                 for(int i=0; i<variable_total_count; i++){
-                    if( strcmp(&variable_list[i].name[0], keywords[index+2].words) == 0 ){
+                    //printf("\n %s %s\n",&variable_list[i].name[0],keywords[index+1].words);
+                    if( strcmp(&variable_list[i].name[0], keywords[index+1].words) == 0 ){
                         executable_list[executable_index].variable_index = i;
                         success_flag =1;
+                        //printf("suflag: %d\n",success_flag);
+                        break;
                     }
                 }
-
+                //printf("suflag2: %d\n",success_flag);
                 if(success_flag ==0){
                     printf("variable name not declared! ERROR line: %d\n",keywords[index+2].line);
                 }
                 index +=2;
+                executable_index++;
             }
+    }
+
+    printf("executable count: %d label count: %d variable count: %d\n", executable_index,label_index,variable_total_count);
+    int label_total_count = label_index;
+    int executable_total_count=executable_index;
+    for(int i=0;i<executable_total_count; i++){
+        if(executable_list[i].label_index ==0){ //두줄 짜리 명령어
+            printf(" instruction type: %d variable index: %d\n",executable_list[i].instruction,executable_list[i].variable_index);
+        }
+        else{
+            printf("label index: %d index in label: %d  instruction type: %d variable index: %d\n",executable_list[i].label_index,label_list[executable_list[i].label_index-1].to_here,executable_list[i].instruction,executable_list[i].variable_index);
+            // label_list[executable_list[i].label_index-1].to_here 에서 보면 executable_list[i].label_index값에 -1이 들어가 있는데, 이는 struct executable가 label_index값이 0일때 라벨이 없다고 판단해서 그렇다.
+        }
     }
 
     return 0;
