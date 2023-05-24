@@ -22,6 +22,7 @@ int assembler(struct Word *keywords,int index_max); //make sure that functions u
 struct variable{
     char name[WORD_MAX_LENGTH];
     char *ptr;
+    bool is_array;
 };
 
 struct executable{
@@ -204,14 +205,15 @@ int assembler(struct Word *keywords,int index_max){
                 }
             else if(keywords[index+1].type == 30){ // RESW
                 variable_list[var_index].ptr = make_var( atoi(&keywords[index+2].words[0])*3 );
-                printf("RESW: name:%s", variable_list[var_index].name);
+                printf("RESW: name:%s\n", variable_list[var_index].name);
                 }
             }
         index +=3;
         var_index++;
         }
     int variable_total_count = var_index;
-    printf("variable_total_count: %d \n", variable_total_count);
+    printf("variable_total_count: %d \n=====================\n", variable_total_count);
+
 
     index =3;
 
@@ -223,7 +225,7 @@ int assembler(struct Word *keywords,int index_max){
     //printf("%d\n",index_max);
         while( index < var_index_start) {
             if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
-                printf("instruction line with label\n");
+                printf("%d: instruction line with label\n",keywords[index].line);
                 strcpy(&label_list[label_index].name[0], keywords[index].words);  //라벨 저장
                 label_list[label_index].to_here = executable_index;
                 label_index++;
@@ -234,9 +236,38 @@ int assembler(struct Word *keywords,int index_max){
                 for(int i=0; i<variable_total_count; i++){
                     if( strcmp(&variable_list[i].name[0], keywords[index+2].words) == 0 ){ // 명령어 줄에 있는 변수 이름이 선언된었는지 확인한다.
                         executable_list[executable_index].variable_index = i;
+                        variable_list[i].is_array=0;
                         success_flag =1;
                         break;
                     }
+
+                if(success_flag ==0){ // if a normal name was not detected, check if it's array variable
+                    for(int i=0; keywords[index+2].words[i] != '\0' && i < WORD_MAX_LENGTH; i++){ // checking if i is under WORD_MAX_LENGTH may seem unnecessary..
+                        if( keywords[index+2].words[i] == ',' ){
+                            printf("array identifier comma was found at line: %d\n",keywords[index+2].line);
+                            char check_buffer[WORD_MAX_LENGTH];
+                            for(int buffer_i=0; buffer_i < i; buffer_i++){
+                                check_buffer[buffer_i]= keywords[index+2].words[buffer_i]; //copys text value before ',' to buffer fro comparison
+                            }
+                            check_buffer[i+1]='\0';
+
+                            for(int i=0; i<variable_total_count; i++){
+                                if( strcmp(&variable_list[i].name[0], &check_buffer[0]) == 0 ){ // 명령어 줄에 있는 변수 이름이 선언된었는지 확인한다.
+                                    executable_list[executable_index].variable_index = i;
+                                    variable_list[i].is_array=1;
+                                    success_flag =1;
+                                    printf("array name: %s\n", &check_buffer[0]);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if(success_flag == 0){
+                        printf("variable name not declared! ERROR line: %d\n",keywords[index+1].line);
+                    }
+                }
+
                 }
                 if(success_flag ==0){
                     printf("variable name not declared! ERROR line: %d\n",keywords[index+2].line);
@@ -246,7 +277,7 @@ int assembler(struct Word *keywords,int index_max){
                 executable_index++;
             }
             else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
-                printf("instruction line without label\n");
+                printf("%d: instruction line without label\n",keywords[index].line);
                 executable_list[executable_index].label_index=0;
                 executable_list[executable_index].instruction = keywords[index].type;
                 bool success_flag=0;
@@ -255,13 +286,38 @@ int assembler(struct Word *keywords,int index_max){
                     if( strcmp(&variable_list[i].name[0], keywords[index+1].words) == 0 ){
                         executable_list[executable_index].variable_index = i;
                         success_flag =1;
+                        variable_list[i].is_array=0;
                         //printf("suflag: %d\n",success_flag);
                         break;
                     }
                 }
                 //printf("suflag2: %d\n",success_flag);
-                if(success_flag ==0){
-                    printf("variable name not declared! ERROR line: %d\n",keywords[index+2].line);
+                if(success_flag ==0){ // if a normal name was not detected, check if it's array variable
+                    for(int i=0; keywords[index+1].words[i] != '\0' && i < WORD_MAX_LENGTH; i++){ // checking if i is under WORD_MAX_LENGTH may seem unnecessary..
+                        if( keywords[index+1].words[i] == ',' ){
+                            printf("array identifier comma was found at line: %d\n",keywords[index+1].line);
+                            char check_buffer[WORD_MAX_LENGTH];
+                            for(int buffer_i=0; buffer_i < i; buffer_i++){
+                                check_buffer[buffer_i]= keywords[index+1].words[buffer_i]; //copys text value before ',' to buffer fro comparison
+                            }
+                            check_buffer[i+1]='\0';
+                            printf("array name: %s\n", &check_buffer[0]);
+
+                            for(int i=0; i<variable_total_count; i++){
+                                if( strcmp(&variable_list[i].name[0], &check_buffer[0]) == 0 ){ // 명령어 줄에 있는 변수 이름이 선언된었는지 확인한다.
+                                    executable_list[executable_index].variable_index = i;
+                                    variable_list[i].is_array=1;
+                                    success_flag =1;
+                                    printf("array name: %s\n", &check_buffer[0]);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if(success_flag == 0){
+                        printf("variable name not declared! ERROR line: %d\n",keywords[index+1].line);
+                    }
                 }
                 index +=2;
                 executable_index++;
