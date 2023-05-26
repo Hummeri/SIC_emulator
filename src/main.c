@@ -28,7 +28,7 @@ struct variable{
 struct executable{
     int instruction;
     int variable_index;
-    int label_index;
+    int label_index; // if label index is 0, there is no index.
 };
 
 struct label{
@@ -39,6 +39,11 @@ bool num_check(char *address);
 short data_check(char *address2);
 
 char * make_var(int how_many_word);
+
+void MathCalculate(int instruction,char *Register_A,struct variable *to_variable);
+void LoadFunction(int instruction,char *Register_A,struct variable *to_variable);
+void StoreFunction(int instruction,char *Register_A,struct variable *to_variable);
+void CompareFunction(int instruction,char *Register_A,struct variable *to_variable);
 
 int main(int argc,char *argv[])
 {
@@ -310,7 +315,7 @@ int assembler(struct Word *keywords,int index_max){
                                     printf("array name: %s\n", &check_buffer[0]);
                                     break;
                                 }
-                                printf("\n nope list:%s  check_buffer:%s result: %d\n" , &variable_list[i].name[0], &check_buffer[0],strcmp(&variable_list[i].name[0],  &check_buffer[0]) );
+                                //printf("\n nope list:%s  check_buffer:%s result: %d\n" , &variable_list[i].name[0], &check_buffer[0],strcmp(&variable_list[i].name[0],  &check_buffer[0]) );
                             }
                         }
                     }
@@ -346,10 +351,37 @@ int assembler(struct Word *keywords,int index_max){
     char *R_l = make_var(3); //linkage register
     int PC; // program counter
     int SW;// status word? 애 이름 제대로 알아내기
-    for(int i=0;i<executable_total_count;i++){
 
+    *R_a = 1;// reset register a to zero for testing
+
+    for(int i=0;i<executable_total_count;i++){ // now, finally a code that runs everything.
+        if(executable_list[i].instruction>0 && executable_list[i].instruction < 7){ // 1~6 are instruction that perform Math calculations on the value.
+            MathCalculate(executable_list[i].instruction,R_a,&variable_list[executable_list[i].variable_index]);
+        }
+        printf("register Ra: %d\n", *R_a);
     }
     return 0;
+}
+
+void MathCalculate(int instruction,char *Register_A,struct variable *to_variable){
+    if(instruction<4){
+        if(instruction==1){ //ADD
+            //printf("magic! Ra: %d variable value: %d",**Register_A,**to_variable->ptr)
+            *Register_A += *to_variable->ptr;
+        }
+        else if(instruction==2) // SUB
+            *Register_A -= *to_variable->ptr;
+        else if(instruction==3) //MUL
+            *Register_A *= *to_variable->ptr;
+    }
+    else{
+        if(instruction==4) //DIV
+            *Register_A /= *to_variable->ptr;
+        else if(instruction==5) // AND
+            *Register_A &=*to_variable->ptr;
+        else if(instruction==6) // AND
+            *Register_A |= *to_variable->ptr;
+    }
 }
 
 char * make_var(int how_many_word){ // SIC 머신에서 한 워드가 8비트이다. 레지스터는 모두 3워드, 24비트 이다.
