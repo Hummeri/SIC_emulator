@@ -41,9 +41,10 @@ short data_check(char *address2);
 char * make_var(int how_many_word);
 
 void MathCalculate(int instruction,char *Register_A,struct variable *to_variable);
-void LoadFunction(int instruction,char *Register_A,struct variable *to_variable);
-void StoreFunction(int instruction,char *Register_A,struct variable *to_variable);
-void CompareFunction(int instruction,char *Register_A,struct variable *to_variable);
+void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_variable);
+void StoreFunction(int instruction,char *RegisterAddress,struct variable *to_variable);
+void CompareFunction(int instruction,char *Register_SW
+,struct variable *to_variable);
 
 int main(int argc,char *argv[])
 {
@@ -194,23 +195,41 @@ int assembler(struct Word *keywords,int index_max){
 
             if( keywords[index+1].type == 27) { //변수 타입 BYTE 얘는 CHAR1 BYTE C'Z' 같은 형식을 사용할 수 있으니 저 c와 '를 검사하는 걸 넣어야한다.
                 variable_list[var_index].ptr = make_var(1); //1 바이트, 8비트의 크기를 가진 메모리 주소를 리턴한다.
-                if( data_check( &keywords[index+2].words[0] ) == 2){ // 문자 저장
+
+                if( data_check( &keywords[index+2].words[0] ) == 2){ // 단일 문자 저장
                     *variable_list[var_index].ptr =keywords[index+2].words[2];
-                    printf("BYTE: name:%s value: %c\n",variable_list[var_index].name ,*variable_list[var_index].ptr);
+
+                    variable_list[var_index].is_array=0;
+
+                    printf("BYTE: name:%s value: %c is_array: %d\n",variable_list[var_index].name ,*variable_list[var_index].ptr,variable_list[var_index].is_array);
                 }
             }
             else if(keywords[index+1].type == 28){  //변수 타입 WORD
                 variable_list[var_index].ptr = make_var(3);
                 *variable_list[var_index].ptr = atoi(&keywords[index+2].words[0]); //the atoi function requires const str* type, but somehow still works
-                printf("WORD, name:%s value: %d\n",variable_list[var_index].name ,*variable_list[var_index].ptr);
+
+                variable_list[var_index].is_array=0;
+
+                printf("WORD, name:%s value: %d is_array:%d\n",variable_list[var_index].name ,*variable_list[var_index].ptr,variable_list[var_index].is_array);
             }
             else if(keywords[index+1].type == 29) { //RESB
-                variable_list[var_index].ptr = make_var( atoi(&keywords[index+2].words[0]) );
-                printf("RESB, name:%s\n", variable_list[var_index].name);
+                int temp = atoi(&keywords[index+2].words[0]);
+                variable_list[var_index].ptr = make_var( temp );
+                if(temp > 1)
+                    variable_list[var_index].is_array=1;
+                else
+                    variable_list[var_index].is_array=0;
+
+                printf("RESB, name:%s is_array:%d\n", variable_list[var_index].name,variable_list[var_index].is_array);
                 }
             else if(keywords[index+1].type == 30){ // RESW
-                variable_list[var_index].ptr = make_var( atoi(&keywords[index+2].words[0])*3 );
-                printf("RESW: name:%s\n", variable_list[var_index].name);
+                int temp = atoi(&keywords[index+2].words[0])*3;
+                variable_list[var_index].ptr = make_var( temp );
+                if(temp >1)
+                    variable_list[var_index].is_array=1;
+                else
+                    variable_list[var_index].is_array=0;
+                printf("RESW: name:%s is_array:%d \n", variable_list[var_index].name,variable_list[var_index].is_array);
                 }
             }
         index +=3;
@@ -253,7 +272,7 @@ int assembler(struct Word *keywords,int index_max){
                             printf("array identifier comma was found at line: %d\n",keywords[index+2].line);
                             char check_buffer[WORD_MAX_LENGTH];
                             for(int buffer_i=0; buffer_i < i; buffer_i++){
-                                check_buffer[buffer_i]= keywords[index+2].words[buffer_i]; //copys text value before ',' to buffer fro comparison
+                                check_buffer[buffer_i]= keywords[index+2].words[buffer_i]; //copys text value before ',' to buffer from comparison
                             }
                             check_buffer[i]='\0';
 
@@ -346,21 +365,63 @@ int assembler(struct Word *keywords,int index_max){
     }
     //인제 프로그램을 실행하는 코드
     //먼저, 레지스터를 생성한다.
+    /*
     char *R_a = make_var(3); //accumulator register
     char *R_x = make_var(3); //index register
     char *R_l = make_var(3); //linkage register
+    */
     int PC; // program counter
-    int SW;// status word? 애 이름 제대로 알아내기
+    //int SW;// status word? 애 이름 제대로 알아내기
 
-    *R_a = 1;// reset register a to zero for testing
+    char *RegisterList[4];
+    for(short i=0;i<4;i++){
+        RegisterList[i]= make_var(3);
+        *RegisterList[i]=0;
+    }
+    // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
+
+    //*R_a = *R_x = *R_l = SW = 0;// reset registers to zero
+    PC= 0;
+
+    printf("\ncode now executes!\n===============================\n");
 
     for(int i=0;i<executable_total_count;i++){ // now, finally a code that runs everything.
         if(executable_list[i].instruction>0 && executable_list[i].instruction < 7){ // 1~6 are instruction that perform Math calculations on the value.
-            MathCalculate(executable_list[i].instruction,R_a,&variable_list[executable_list[i].variable_index]);
+            MathCalculate(executable_list[i].instruction, RegisterList[0],&variable_list[executable_list[i].variable_index]);
         }
-        printf("register Ra: %d\n", *R_a);
+        else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
+            LoadFunction(executable_list[i].instruction, RegisterList[0] , &variable_list[executable_list[i].variable_index]);
+        }
+
+
+        printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,*RegisterList[0],*RegisterList[1],*RegisterList[2],PC,*RegisterList[3]);
+
+        printf("VARIABLE STATUS:\n");
+        for(int var_i=0; var_i < variable_total_count; var_i++ ){
+            //printf(" %d ", variable_list[i].is_array);
+            if( variable_list[i].is_array== 0)
+            printf("%s: %d ",&variable_list[var_i].name[0], *variable_list[var_i].ptr);
+            else{ // print out the whole array.
+
+            }
+        }
+        putchar('\n');
+
     }
     return 0;
+}
+void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_variable){
+    // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
+    if(instruction<9){
+        if(instruction == 7) // LDA
+            RegisterAddress[0] = *to_variable->ptr;
+        else{ // LDCH
+            // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
+            // lets hope c uses small edian...
+            // the binary value above is 16776960
+            RegisterAddress[0] = 16776960 && *to_variable->ptr;
+        }
+    }
 }
 
 void MathCalculate(int instruction,char *Register_A,struct variable *to_variable){
