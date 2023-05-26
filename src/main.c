@@ -383,7 +383,7 @@ int assembler(struct Word *keywords,int index_max){
     //*R_a = *R_x = *R_l = SW = 0;// reset registers to zero
     PC= 0;
 
-    printf("\ncode now executes!\n===============================\n");
+    printf("\nSIC code now executes!\n===============================\n");
 
     for(int i=0;i<executable_total_count;i++){ // now, finally a code that runs everything.
         if(executable_list[i].instruction>0 && executable_list[i].instruction < 7){ // 1~6 are instruction that perform Math calculations on the value.
@@ -392,7 +392,9 @@ int assembler(struct Word *keywords,int index_max){
         else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
             LoadFunction(executable_list[i].instruction, RegisterList[0] , &variable_list[executable_list[i].variable_index]);
         }
-
+        else if(executable_list[i].instruction>10 && executable_list[i].instruction < 15){ // 7~10 are load instructions
+            StoreFunction(executable_list[i].instruction, RegisterList[0] , &variable_list[executable_list[i].variable_index]);
+        }
 
         printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,*RegisterList[0],*RegisterList[1],*RegisterList[2],PC,*RegisterList[3]);
 
@@ -410,6 +412,16 @@ int assembler(struct Word *keywords,int index_max){
     }
     return 0;
 }
+
+void StoreFunction(int instruction,char *RegisterAddress,struct variable *to_variable){
+    if(instruction <13){
+        if(instruction == 11) // STA
+            *to_variable->ptr = RegisterAddress[0] ;
+        else // STCH
+            *to_variable->ptr = 16776960 && RegisterAddress[0] ;
+    }
+}
+
 void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_variable){
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     if(instruction<9){
@@ -419,8 +431,14 @@ void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_vari
             // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
             // lets hope c uses small edian...
             // the binary value above is 16776960
-            RegisterAddress[0] = 16776960 && *to_variable->ptr;
+            RegisterAddress[0] = 16776960 && *to_variable->ptr; // it works!
         }
+    }
+    else{
+        if(instruction == 9) // LDL
+            RegisterAddress[2] = *to_variable->ptr;
+        if(instruction == 10) // LDX
+            RegisterAddress[1] = *to_variable->ptr;
     }
 }
 
