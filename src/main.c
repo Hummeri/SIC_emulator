@@ -21,7 +21,7 @@ int assembler(struct Word *keywords,int index_max); //make sure that functions u
 
 struct variable{
     char name[WORD_MAX_LENGTH];
-    char *ptr;
+    int *ptr;
     bool is_array;
 };
 
@@ -38,13 +38,12 @@ struct label{
 bool num_check(char *address);
 short data_check(char *address2);
 
-char * make_var(int how_many_word);
+int * make_var(int how_many_word);
 
-void MathCalculate(int instruction,char *Register_A,struct variable *to_variable);
-void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_variable);
-void StoreFunction(int instruction,char *RegisterAddress,struct variable *to_variable);
-void CompareFunction(int instruction,char *Register_SW
-,struct variable *to_variable);
+void MathCalculate(int instruction,int *Register_A,struct variable *to_variable);
+void LoadFunction(int instruction,int *RegisterAddress,struct variable *to_variable);
+void StoreFunction(int instruction,int *RegisterAddress,struct variable *to_variable);
+void CompareFunction(int instruction,int *Register_SW,struct variable *to_variable);
 
 int main(int argc,char *argv[])
 {
@@ -373,7 +372,7 @@ int assembler(struct Word *keywords,int index_max){
     int PC; // program counter
     //int SW;// status word? 애 이름 제대로 알아내기
 
-    char *RegisterList[4];
+    int *RegisterList[4];
     for(short i=0;i<4;i++){
         RegisterList[i]= make_var(3);
         *RegisterList[i]=0;
@@ -408,21 +407,26 @@ int assembler(struct Word *keywords,int index_max){
             }
         }
         putchar('\n');
+        putchar('\n');
 
     }
     return 0;
 }
 
-void StoreFunction(int instruction,char *RegisterAddress,struct variable *to_variable){
+void StoreFunction(int instruction,int *RegisterAddress,struct variable *to_variable){
     if(instruction <13){
         if(instruction == 11) // STA
             *to_variable->ptr = RegisterAddress[0] ;
-        else // STCH
-            *to_variable->ptr = 16776960 && RegisterAddress[0] ;
+        else {// STCH
+            //printf("here: %d \n ",RegisterAddress[0]&16776960 );
+            // 1111_1111 in binary is 255 or 256?
+            *to_variable->ptr = 255 & RegisterAddress[0] ; // 255 it is!
+
+    }
     }
 }
 
-void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_variable){
+void LoadFunction(int instruction,int *RegisterAddress,struct variable *to_variable){
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     if(instruction<9){
         if(instruction == 7) // LDA
@@ -431,7 +435,7 @@ void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_vari
             // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
             // lets hope c uses small edian...
             // the binary value above is 16776960
-            RegisterAddress[0] = 16776960 && *to_variable->ptr; // it works!
+            RegisterAddress[0] = 16776960 & *to_variable->ptr; // it works!
         }
     }
     else{
@@ -442,7 +446,7 @@ void LoadFunction(int instruction,char *RegisterAddress,struct variable *to_vari
     }
 }
 
-void MathCalculate(int instruction,char *Register_A,struct variable *to_variable){
+void MathCalculate(int instruction,int *Register_A,struct variable *to_variable){
     if(instruction<4){
         if(instruction==1){ //ADD
             //printf("magic! Ra: %d variable value: %d",**Register_A,**to_variable->ptr)
@@ -463,9 +467,9 @@ void MathCalculate(int instruction,char *Register_A,struct variable *to_variable
     }
 }
 
-char * make_var(int how_many_word){ // SIC 머신에서 한 워드가 8비트이다. 레지스터는 모두 3워드, 24비트 이다.
-    char *pointer;
-    pointer = (char*)malloc(how_many_word*8);
+int * make_var(int how_many_word){ // SIC 머신에서 한 워드가 8비트이다. 레지스터는 모두 3워드, 24비트 이다.
+    int *pointer;
+    pointer = (int*)malloc(how_many_word*8);
     return pointer;
 }
 
