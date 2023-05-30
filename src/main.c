@@ -227,15 +227,23 @@ int assembler(struct Word *keywords,int index_max){
 
                     for(int i=0; i < WORD_MAX_LENGTH; i++){
                         if(keywords[index+2].words[i] == ','){
+                            buffer[buffer_index]='\0';
                             *(variable_list[var_index].ptr+pointer_offset*24)=atoi(&buffer[0]);
+                            buffer_index=0;
+                            pointer_offset++;
                         }
                         else{
                             buffer[buffer_index]=keywords[index+2].words[i];
                             buffer_index++;
-                            pointer_offset++;
                         }
 
-                        if(keywords[index+2].words[i] == '\0' || pointer_offset == comma_count){
+                        if(keywords[index+2].words[i] == '\0' /*|| pointer_offset == comma_count*/){
+                            printf("buffer last : %s\n",&buffer[0]);
+                            buffer[buffer_index]='\0';
+                            printf("that string is %d as a number\n ",atoi(&buffer[0]) );
+                            *(variable_list[var_index].ptr+pointer_offset*24)=atoi(&buffer[0]);
+                            printf("value here: %d\n",*(variable_list[var_index].ptr+pointer_offset*24));
+
                             variable_list[var_index].is_array=1;
                             variable_list[var_index].array_max = comma_count +1;
                             variable_list[var_index].data_type = 0;
@@ -415,6 +423,8 @@ int assembler(struct Word *keywords,int index_max){
     int PC; // program counter
     //int SW;// status word? 애 이름 제대로 알아내기
 
+    printf("value! %d", *(variable_list[1].ptr+2*24));
+
     int *RegisterList[4];
     for(short i=0;i<4;i++){
         RegisterList[i]= make_var(3);
@@ -452,15 +462,16 @@ int assembler(struct Word *keywords,int index_max){
                 printf("%s: %d ",&variable_list[var_i].name[0], *variable_list[var_i].ptr);
             }
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
-                printf("array ! %s: ",&variable_list[var_i].name[0]);
+                printf("%d var_i array ! %s: ",var_i,&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
-                    printf("%d ",*(variable_list[var_i].ptr+array_i*24) );
+                    printf("%d: %d ",array_i, *(variable_list[var_i].ptr+array_i*24) );
                 }
             }
             else{
                 printf("variable error!\n");
             }
         }
+        printf("value! %d", *(variable_list[1].ptr+2*24));
         printf("\n\n");
 
     }
