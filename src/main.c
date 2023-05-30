@@ -423,7 +423,7 @@ int assembler(struct Word *keywords,int index_max){
     int PC; // program counter
     //int SW;// status word? 애 이름 제대로 알아내기
 
-    printf("value! %d", *(variable_list[1].ptr+2*24));
+    //printf("value! %d", *(variable_list[1].ptr+2*24));
 
     int *RegisterList[4];
     for(short i=0;i<4;i++){
@@ -453,7 +453,7 @@ int assembler(struct Word *keywords,int index_max){
         }
 
         printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,*RegisterList[0],*RegisterList[1],*RegisterList[2],PC,*RegisterList[3]);
-        //printf("rx in loop register address: %d\n",RegisterList[1]);
+        printf("rx in loop register address: %p\n", RegisterList[1]);
 
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
@@ -464,14 +464,14 @@ int assembler(struct Word *keywords,int index_max){
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
                 printf("%d var_i array ! %s: ",var_i,&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
-                    printf("%d: %d ",array_i, *(variable_list[var_i].ptr+array_i*24) );
+                    printf("%d:%d ",array_i, *(variable_list[var_i].ptr+array_i*24) );
                 }
             }
             else{
                 printf("variable error!\n");
             }
         }
-        printf("value! %d", *(variable_list[1].ptr+2*24));
+        //printf("value! %d", *(variable_list[1].ptr+2*24));
         printf("\n\n");
 
     }
@@ -538,7 +538,7 @@ void StoreFunction(int instruction,int *RegisterAddress,struct variable *to_vari
                 *to_variable->ptr = RegisterAddress[2] ; // store value from linkage register
             }
             else{ // STX
-                printf("rx register address: %d\n",&RegisterAddress[1]);
+                printf("rx register address: %p\n",&RegisterAddress[1]);
                 *to_variable->ptr = RegisterAddress[1] ; // store value from index register
             }
         }
@@ -562,8 +562,10 @@ void LoadFunction(int instruction,int *RegisterAddress,struct variable *to_varia
         else{
             if(instruction == 9) // LDL
                 RegisterAddress[2] = to_variable->ptr[to_executable->variable_index];
-            if(instruction == 10) // LDX
+            if(instruction == 10){ // LDX
                 RegisterAddress[1] = to_variable->ptr[to_executable->variable_index];
+                printf("Rx address in ldx function %d",&RegisterAddress[1]);
+            }
         }
     }
     else{ // variable is not a array
