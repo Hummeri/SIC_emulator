@@ -565,21 +565,26 @@ void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_vari
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     if( to_variable->is_array == 1){ //variable is array
         printf("load array! in load function %p \n");
+        int mem_size = 24;
+        printf("data type %d ",to_variable->data_type);
+        if(to_variable->data_type==1)// char type
+            mem_size = 8;
+
         if(instruction<9){
         if(instruction == 7) // LDA
-            *RegisterAddress[0] = *(to_variable->ptr+*RegisterAddress[1]*24); // this code works!!!!!
+            *RegisterAddress[0] = *(to_variable->ptr+*RegisterAddress[1]*mem_size); // this code works!!!!!
         else{ // LDCH
             // bit mask 0b 1111_1111 to get char value only
             // lets hope c uses small edian...
             // the binary value above is 255
-            *RegisterAddress[0] = 255 & *(to_variable->ptr+*RegisterAddress[1]*24); // it works!
+            *RegisterAddress[0] = 255 & *(to_variable->ptr+*RegisterAddress[1]*mem_size); // it works!
         }
     }
         else{
             if(instruction == 9) // LDL
-                *RegisterAddress[2] = to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[2] = *(to_variable->ptr+*RegisterAddress[1]*mem_size);
             if(instruction == 10){ // LDX
-                *RegisterAddress[1] = to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[1] = *(to_variable->ptr+*RegisterAddress[1]*mem_size);
                 //printf("Rx address in ldx function %d",&RegisterAddress[1]);
             }
         }
@@ -607,23 +612,27 @@ void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_vari
 
 void MathCalculate(int instruction,int **RegisterAddress,struct variable *to_variable, struct executable * to_executable){
     if(to_variable->is_array == 1){ //variable is array
+        int mem_size = 24;
+        if(to_variable->data_type==1)// char type
+            mem_size = 8;
+
         if(instruction<4){
             if(instruction==1){ //ADD
                 //printf("magic! Ra: %d variable value: %d",**Register_A,**to_variable->ptr)
-                *RegisterAddress[0] += to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[0] += *(to_variable->ptr+*RegisterAddress[1]*mem_size);
             }
         else if(instruction==2) // SUB
-            *RegisterAddress[0] -= to_variable->ptr[to_executable->variable_index];
+            *RegisterAddress[0] -= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
         else if(instruction==3) //MUL
-            *RegisterAddress[0] *= to_variable->ptr[to_executable->variable_index];
+            *RegisterAddress[0] *= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
         }
         else{
             if(instruction==4) //DIV
-                *RegisterAddress[0] /= to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[0] /= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
             else if(instruction==5) // AND
-                *RegisterAddress[0] &=to_variable->ptr[to_executable->variable_index];
-            else if(instruction==6) // AND
-                *RegisterAddress[0] |= to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[0] &= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
+            else if(instruction==6) // OR
+                *RegisterAddress[0] |= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
         }
     }
     else{ // variable is not array
