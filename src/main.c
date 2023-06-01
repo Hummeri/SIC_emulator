@@ -43,9 +43,9 @@ short data_check(char *address2);
 int * make_var(int how_many_word);
 
 void MathCalculate(int instruction,int *Register_A,struct variable *to_variable,struct executable * to_executable);
-void LoadFunction(int instruction,int *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-void StoreFunction(int instruction,int *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-void CompareFunction(int instruction,int *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
+void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
+void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
+void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void IOFunction(int instruction,int *Register_A);
 
 int main(int argc,char *argv[])
@@ -430,8 +430,18 @@ int assembler(struct Word *keywords,int index_max){
         RegisterList[i]= make_var(3);
         *RegisterList[i]=0;
     }
-    // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
 
+    for(short i=0; i<4;i++){
+        printf("i: %d address %p value %d\n",i,RegisterList[i],*RegisterList[i]);
+    }
+    printf("int size: %p\n", sizeof(int));
+    // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
+    //*(RegisterList[0]+8*sizeof(int)) = 4;
+    *RegisterList[1]=4;
+
+    for(short i=0; i<4;i++){
+        printf("i: %d address %p value %d\n",i,RegisterList[i],*RegisterList[i]);
+    }
     //*R_a = *R_x = *R_l = SW = 0;// reset registers to zero
     PC= 0;
 
@@ -443,13 +453,13 @@ int assembler(struct Word *keywords,int index_max){
             MathCalculate(executable_list[i].instruction, RegisterList[0],&variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
         else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
-            LoadFunction(executable_list[i].instruction, RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
+            LoadFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
         else if(executable_list[i].instruction>10 && executable_list[i].instruction < 15){ // 7~10 are load instructions
-            StoreFunction(executable_list[i].instruction, RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
+            StoreFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
         else if(executable_list[i].instruction>14 && executable_list[i].instruction < 17){ //these are compare functions
-            CompareFunction(executable_list[i].instruction, RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
+            CompareFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
 
         printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,*RegisterList[0],*RegisterList[1],*RegisterList[2],PC,*RegisterList[3]);
@@ -462,7 +472,7 @@ int assembler(struct Word *keywords,int index_max){
                 printf("%s: %d ",&variable_list[var_i].name[0], *variable_list[var_i].ptr);
             }
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
-                printf("%d var_i array ! %s: ",var_i,&variable_list[var_i].name[0]);
+                printf("var_i %d array ! %s: ",var_i,&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
                     printf("%d:%d ",array_i, *(variable_list[var_i].ptr+array_i*24) );
                 }
@@ -478,92 +488,92 @@ int assembler(struct Word *keywords,int index_max){
     return 0;
 }
 
-void CompareFunction(int instruction,int *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
+void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     // 0 for equal '='
     //1 when register value is Greater than variable value '>'
     // 2 when resgister value is smaller than variable value '<'
 
     if(instruction==15){ // COMP
-        if( RegisterAddress[0] > *to_variable->ptr) // Store value '>' to SW, will branch when JGT is used
-            RegisterAddress[3] = 1;
-        else if( RegisterAddress[0] < *to_variable->ptr ) // '<'
-            RegisterAddress[3] = 2;
-        else if( RegisterAddress[0] == *to_variable->ptr ) // '='
-            RegisterAddress[3] = 0;
+        if( *RegisterAddress[0] > *to_variable->ptr) // Store value '>' to SW, will branch when JGT is used
+            *RegisterAddress[3] = 1;
+        else if( *RegisterAddress[0] < *to_variable->ptr ) // '<'
+            *RegisterAddress[3] = 2;
+        else if( *RegisterAddress[0] == *to_variable->ptr ) // '='
+            *RegisterAddress[3] = 0;
     }
     else{ // TIX
-        RegisterAddress[1]++;
-        if( RegisterAddress[0] > to_variable->ptr[RegisterAddress[1] ]) // Store value '>' to SW, will branch when JGT is used
-            RegisterAddress[3] = 1;
-        else if( RegisterAddress[0] < to_variable->ptr[RegisterAddress[1] ] ) // '<'
-            RegisterAddress[3] = 2;
-        else if( RegisterAddress[0] == to_variable->ptr[RegisterAddress[1] ] ) // '='
-            RegisterAddress[3] = 0;
+        *RegisterAddress[1]++;
+        if( *RegisterAddress[0] > to_variable->ptr[*RegisterAddress[1] ]) // Store value '>' to SW, will branch when JGT is used
+            *RegisterAddress[3] = 1;
+        else if( *RegisterAddress[0] < to_variable->ptr[*RegisterAddress[1] ] ) // '<'
+            *RegisterAddress[3] = 2;
+        else if( *RegisterAddress[0] == to_variable->ptr[*RegisterAddress[1] ] ) // '='
+            *RegisterAddress[3] = 0;
     }
 }
 
-void StoreFunction(int instruction,int *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
+void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     if(to_variable->is_array == 1){
         if(instruction <13){
             if(instruction == 11) // STA
-                *(&to_variable->ptr[to_executable->variable_index]+RegisterAddress[1]*24) = RegisterAddress[0] ;
+                *(&to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = *RegisterAddress[0] ;
         else {// STCH
             //printf("here: %d \n ",RegisterAddress[0]&16776960 );
             // 1111_1111 in binary is 255 or 256?
-            to_variable->ptr[to_executable->variable_index] = 255 & RegisterAddress[0] ; // 255 it is!
+            to_variable->ptr[to_executable->variable_index] = 255 & *RegisterAddress[0] ; // 255 it is!
         }
     }
         else{
             if(instruction==13){ //STL
-                *to_variable->ptr = RegisterAddress[2] ; // store value from linkage register
+                *to_variable->ptr = *RegisterAddress[2] ; // store value from linkage register
             }
             else{ // STX
-                *to_variable->ptr = RegisterAddress[1] ; // store value from index register
+                *to_variable->ptr = *RegisterAddress[1] ; // store value from index register
             }
         }
     }
     else{
         if(instruction <13){
             if(instruction == 11) // STA
-                *to_variable->ptr = RegisterAddress[0] ;
+                *to_variable->ptr = *RegisterAddress[0] ;
         else {// STCH
             //printf("here: %d \n ",RegisterAddress[0]&16776960 );
             // 1111_1111 in binary is 255 or 256?
-            *to_variable->ptr = 255 & RegisterAddress[0] ; // 255 it is!
+            *to_variable->ptr = 255 & *RegisterAddress[0] ; // 255 it is!
         }
     }
         else{
             if(instruction==13){ //STL
-                *to_variable->ptr = RegisterAddress[2] ; // store value from linkage register
+                *to_variable->ptr = *RegisterAddress[2] ; // store value from linkage register
             }
             else{ // STX
-                printf("rx register address: %p\n",&RegisterAddress[1]);
-                *to_variable->ptr = RegisterAddress[1] ; // store value from index register
+                printf("rx register address: %p in STL\n",&RegisterAddress[1]);
+                *to_variable->ptr = *RegisterAddress[1] ; // store value from index register
             }
         }
     }
 
 }
 
-void LoadFunction(int instruction,int *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
+void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     if( to_variable->is_array == 1){ //variable is array
         if(instruction<9){
         if(instruction == 7) // LDA
-            RegisterAddress[0] = *(&to_variable->ptr[to_executable->variable_index]+RegisterAddress[1]*24);
+            *RegisterAddress[0] = *(&to_variable->ptr[to_executable->variable_index]+*RegisterAddress[1]*24);
         else{ // LDCH
             // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
             // lets hope c uses small edian...
             // the binary value above is 16776960
-            RegisterAddress[0] = 16776960 & to_variable->ptr[to_executable->variable_index]; // it works!
+            *RegisterAddress[0] = 16776960 & to_variable->ptr[to_executable->variable_index]; // it works!
         }
     }
         else{
             if(instruction == 9) // LDL
-                RegisterAddress[2] = to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[2] = to_variable->ptr[to_executable->variable_index];
             if(instruction == 10){ // LDX
-                RegisterAddress[1] = to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[1] = to_variable->ptr[to_executable->variable_index];
                 printf("Rx address in ldx function %d",&RegisterAddress[1]);
             }
         }
@@ -571,19 +581,19 @@ void LoadFunction(int instruction,int *RegisterAddress,struct variable *to_varia
     else{ // variable is not a array
         if(instruction<9){
         if(instruction == 7) // LDA
-            RegisterAddress[0] = *to_variable->ptr;
+            *RegisterAddress[0] = *to_variable->ptr;
         else{ // LDCH
             // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
             // lets hope c uses small edian...
             // the binary value above is 16776960
-            RegisterAddress[0] = 16776960 & *to_variable->ptr; // it works!
+            *RegisterAddress[0] = 16776960 & *to_variable->ptr; // it works!
         }
     }
         else{
             if(instruction == 9) // LDL
-                RegisterAddress[2] = *to_variable->ptr;
+                *RegisterAddress[2] = *to_variable->ptr;
             if(instruction == 10) // LDX
-                RegisterAddress[1] = *to_variable->ptr;
+                *RegisterAddress[1] = *to_variable->ptr;
         }
     }
 
