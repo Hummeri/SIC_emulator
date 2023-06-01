@@ -468,11 +468,11 @@ int assembler(struct Word *keywords,int index_max){
         }
 
         printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,*RegisterList[0],*RegisterList[1],*RegisterList[2],PC,*RegisterList[3]);
-        printf("rx in loop register address: %p\n", RegisterList[1]);
+        //printf("rx in loop register address: %p\n", RegisterList[1]);
 
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
-            printf(" %d ", variable_list[i].is_array);
+            //printf(" %d ", variable_list[i].is_array);
             if( variable_list[var_i].is_array == 0){
                 printf("%s: %d ",&variable_list[var_i].name[0], *variable_list[var_i].ptr);
             }
@@ -567,12 +567,12 @@ void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_vari
         printf("load array! in load function %p \n");
         if(instruction<9){
         if(instruction == 7) // LDA
-            *RegisterAddress[0] = *(to_variable->ptr+*RegisterAddress[1]*24);
+            *RegisterAddress[0] = *(to_variable->ptr+*RegisterAddress[1]*24); // this code works!!!!!
         else{ // LDCH
-            // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
+            // bit mask 0b 1111_1111 to get char value only
             // lets hope c uses small edian...
-            // the binary value above is 16776960
-            *RegisterAddress[0] = 16776960 & to_variable->ptr[to_executable->variable_index]; // it works!
+            // the binary value above is 255
+            *RegisterAddress[0] = 255 & *(to_variable->ptr+*RegisterAddress[1]*24); // it works!
         }
     }
         else{
@@ -589,10 +589,10 @@ void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_vari
         if(instruction == 7) // LDA
             *RegisterAddress[0] = *to_variable->ptr;
         else{ // LDCH
-            // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
+            // bit mask 0b 1111_1111 to get char value only
             // lets hope c uses small edian...
-            // the binary value above is 16776960
-            *RegisterAddress[0] = 16776960 & *to_variable->ptr; // it works!
+            // the binary value above is 255
+            *RegisterAddress[0] = 255 & *to_variable->ptr; // it works!
         }
     }
         else{
