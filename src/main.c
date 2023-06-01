@@ -477,7 +477,7 @@ int assembler(struct Word *keywords,int index_max){
                 printf("%s: %d ",&variable_list[var_i].name[0], *variable_list[var_i].ptr);
             }
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
-                printf("array ! %s: ",var_i,&variable_list[var_i].name[0]);
+                printf("array ! %s: ",&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
                     printf("%d:%d ",array_i, *(variable_list[var_i].ptr+array_i*24) );
                 }
