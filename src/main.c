@@ -42,7 +42,7 @@ short data_check(char *address2);
 
 int * make_var(int how_many_word);
 
-void MathCalculate(int instruction,int *Register_A,struct variable *to_variable,struct executable * to_executable);
+void MathCalculate(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
@@ -450,7 +450,7 @@ int assembler(struct Word *keywords,int index_max){
     for(int i=0;i<executable_total_count;i++){ // now, finally a code that runs everything.
 
         if(executable_list[i].instruction>0 && executable_list[i].instruction < 7){ // 1~6 are instruction that perform Math calculations on the value.
-            MathCalculate(executable_list[i].instruction, RegisterList[0],&variable_list[executable_list[i].variable_index],&executable_list[i]);
+            MathCalculate(executable_list[i].instruction, &RegisterList[0],&variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
         else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
             LoadFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
@@ -472,7 +472,7 @@ int assembler(struct Word *keywords,int index_max){
                 printf("%s: %d ",&variable_list[var_i].name[0], *variable_list[var_i].ptr);
             }
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
-                printf("var_i %d array ! %s: ",var_i,&variable_list[var_i].name[0]);
+                printf("array ! %s: ",var_i,&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
                     printf("%d:%d ",array_i, *(variable_list[var_i].ptr+array_i*24) );
                 }
@@ -517,7 +517,7 @@ void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_var
     if(to_variable->is_array == 1){
         if(instruction <13){
             if(instruction == 11) // STA
-                *(&to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = *RegisterAddress[0] ;
+                *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = *RegisterAddress[0] ;
         else {// STCH
             //printf("here: %d \n ",RegisterAddress[0]&16776960 );
             // 1111_1111 in binary is 255 or 256?
@@ -559,9 +559,10 @@ void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_var
 void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     if( to_variable->is_array == 1){ //variable is array
+        printf("load array! in load function %p \n");
         if(instruction<9){
         if(instruction == 7) // LDA
-            *RegisterAddress[0] = *(&to_variable->ptr[to_executable->variable_index]+*RegisterAddress[1]*24);
+            *RegisterAddress[0] = *(to_variable->ptr+*RegisterAddress[1]*24);
         else{ // LDCH
             // bit mask 0b 1111_1111_1111_1111_0000_0000 to get char value only
             // lets hope c uses small edian...
@@ -574,7 +575,7 @@ void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_vari
                 *RegisterAddress[2] = to_variable->ptr[to_executable->variable_index];
             if(instruction == 10){ // LDX
                 *RegisterAddress[1] = to_variable->ptr[to_executable->variable_index];
-                printf("Rx address in ldx function %d",&RegisterAddress[1]);
+                //printf("Rx address in ldx function %d",&RegisterAddress[1]);
             }
         }
     }
@@ -599,45 +600,45 @@ void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_vari
 
 }
 
-void MathCalculate(int instruction,int *Register_A,struct variable *to_variable, struct executable * to_executable){
+void MathCalculate(int instruction,int **RegisterAddress,struct variable *to_variable, struct executable * to_executable){
     if(to_variable->is_array == 1){ //variable is array
         if(instruction<4){
             if(instruction==1){ //ADD
                 //printf("magic! Ra: %d variable value: %d",**Register_A,**to_variable->ptr)
-                *Register_A += to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[0] += to_variable->ptr[to_executable->variable_index];
             }
         else if(instruction==2) // SUB
-            *Register_A -= to_variable->ptr[to_executable->variable_index];
+            *RegisterAddress[0] -= to_variable->ptr[to_executable->variable_index];
         else if(instruction==3) //MUL
-            *Register_A *= to_variable->ptr[to_executable->variable_index];
+            *RegisterAddress[0] *= to_variable->ptr[to_executable->variable_index];
         }
         else{
             if(instruction==4) //DIV
-                *Register_A /= to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[0] /= to_variable->ptr[to_executable->variable_index];
             else if(instruction==5) // AND
-                *Register_A &=to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[0] &=to_variable->ptr[to_executable->variable_index];
             else if(instruction==6) // AND
-                *Register_A |= to_variable->ptr[to_executable->variable_index];
+                *RegisterAddress[0] |= to_variable->ptr[to_executable->variable_index];
         }
     }
     else{ // variable is not array
         if(instruction<4){
             if(instruction==1){ //ADD
                 //printf("magic! Ra: %d variable value: %d",**Register_A,**to_variable->ptr)
-                *Register_A += *to_variable->ptr;
+                *RegisterAddress[0] += *to_variable->ptr;
             }
         else if(instruction==2) // SUB
-            *Register_A -= *to_variable->ptr;
+            *RegisterAddress[0] -= *to_variable->ptr;
         else if(instruction==3) //MUL
-            *Register_A *= *to_variable->ptr;
+            *RegisterAddress[0] *= *to_variable->ptr;
         }
         else{
             if(instruction==4) //DIV
-                *Register_A /= *to_variable->ptr;
+                *RegisterAddress[0] /= *to_variable->ptr;
             else if(instruction==5) // AND
-                *Register_A &=*to_variable->ptr;
+                *RegisterAddress[0] &=*to_variable->ptr;
             else if(instruction==6) // AND
-                *Register_A |= *to_variable->ptr;
+                *RegisterAddress[0] |= *to_variable->ptr;
         }
     }
 
