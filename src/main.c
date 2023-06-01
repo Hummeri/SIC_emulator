@@ -219,8 +219,7 @@ int assembler(struct Word *keywords,int index_max){
                     variable_list[var_index].is_array=0;
                 }
                 else{
-                    variable_list[var_index].ptr = make_var(3*(comma_count+1) );
-                    bool need_flush=0;
+                    variable_list[var_index].ptr = make_var( 3* (comma_count+1) );
                     char buffer[WORD_MAX_LENGTH];
                     int pointer_offset =0;
                     int buffer_index=0;
@@ -228,7 +227,8 @@ int assembler(struct Word *keywords,int index_max){
                     for(int i=0; i < WORD_MAX_LENGTH; i++){
                         if(keywords[index+2].words[i] == ','){
                             buffer[buffer_index]='\0';
-                            *(variable_list[var_index].ptr+pointer_offset*24)=atoi(&buffer[0]);
+                            printf("that string is %d as a number\n ",atoi(&buffer[0]) );
+                            *(variable_list[var_index].ptr+ (pointer_offset*24) )=atoi(&buffer[0]);
                             buffer_index=0;
                             pointer_offset++;
                         }
@@ -238,10 +238,11 @@ int assembler(struct Word *keywords,int index_max){
                         }
 
                         if(keywords[index+2].words[i] == '\0' /*|| pointer_offset == comma_count*/){
-                            printf("buffer last : %s\n",&buffer[0]);
                             buffer[buffer_index]='\0';
+                            printf("buffer last : %s\n",&buffer[0]);
+
                             printf("that string is %d as a number\n ",atoi(&buffer[0]) );
-                            *(variable_list[var_index].ptr+pointer_offset*24)=atoi(&buffer[0]);
+                            *(variable_list[var_index].ptr+ (pointer_offset*24) )=atoi(&buffer[0]);
                             printf("value here: %d\n",*(variable_list[var_index].ptr+pointer_offset*24));
 
                             variable_list[var_index].is_array=1;
@@ -437,13 +438,17 @@ int assembler(struct Word *keywords,int index_max){
     printf("int size: %p\n", sizeof(int));
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     //*(RegisterList[0]+8*sizeof(int)) = 4;
-    *RegisterList[1]=4;
+    //*RegisterList[1]=4;
 
-    for(short i=0; i<4;i++){
+    /*for(short i=0; i<4;i++){
         printf("i: %d address %p value %d\n",i,RegisterList[i],*RegisterList[i]);
     }
+    */
     //*R_a = *R_x = *R_l = SW = 0;// reset registers to zero
     PC= 0;
+    for(int array_i =0; array_i< variable_list[2].array_max; array_i++){
+        printf("%d:%d ",array_i, *(variable_list[2].ptr+array_i*24) );
+    }
 
     printf("\nSIC code now executes!\n===============================\n");
 
@@ -467,7 +472,7 @@ int assembler(struct Word *keywords,int index_max){
 
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
-            //printf(" %d ", variable_list[i].is_array);
+            printf(" %d ", variable_list[i].is_array);
             if( variable_list[var_i].is_array == 0){
                 printf("%s: %d ",&variable_list[var_i].name[0], *variable_list[var_i].ptr);
             }
