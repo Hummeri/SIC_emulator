@@ -4,7 +4,7 @@
 #include<ctype.h> //used for isupper()
 #include<stdbool.h> //for bool flags
 
-#define WORD_MAX_LENGTH 20 //used for max character length of title and variable names.
+#define WORD_MAX_LENGTH 50 //used for max character length of title and variable names. affects max array numbers too.
 #define MAX_VARIABLE_COUNT 20 //최대 변수 개수
 #define MAX_LABEL_COUNT 20 //라벨 최대 개수
 #define MAX_PROGRAM_INSTRUCTIONS 100 // 명령어 최대 개수
@@ -238,19 +238,17 @@ int assembler(struct Word *keywords,int index_max){
                     for(int i=0; i < WORD_MAX_LENGTH; i++){
                         if(keywords[index+2].words[i] == ','){
                             buffer[buffer_index]='\0';
-                            printf("that string is %d as a number\n ",atoi(&buffer[0]) );
-                            *(variable_list[var_index].ptr+ pointer_offset*24 )=atoi(&buffer[0]); //check atoi return type!
+                            printf("that string is %d as a number ptr_offset: %d\n ",atoi(&buffer[0]), pointer_offset );
+                            struct bit_shield_24 shield_temp;
+                            shield_temp.data = atoi(&buffer[0]);
+                            *(variable_list[var_index].ptr+ pointer_offset*24 )= shield_temp.data;
                             buffer_index=0;
                             pointer_offset++;
+                            continue;
                         }
-                        else{
-                            buffer[buffer_index]=keywords[index+2].words[i];
-                            buffer_index++;
-                        }
-
-                        if(keywords[index+2].words[i] == '\0' /*|| pointer_offset == comma_count*/){
+                        else if(keywords[index+2].words[i] == '\0' /*|| pointer_offset == comma_count*/){
                             buffer[buffer_index]='\0';
-                            printf("buffer last : %s\n",&buffer[0]);
+                            printf("buffer last : %s ptr_offset: %d \n",&buffer[0], pointer_offset);
 
                             printf("that string is %d as a number\n ",atoi(&buffer[0]) );
                             struct bit_shield_24 shield_temp;
@@ -262,6 +260,12 @@ int assembler(struct Word *keywords,int index_max){
                             variable_list[var_index].array_max = comma_count +1;
                             break;
                         }
+                        else{
+                            buffer[buffer_index]=keywords[index+2].words[i];
+                            buffer_index++;
+                        }
+
+
 
                     }
 
@@ -430,15 +434,7 @@ int assembler(struct Word *keywords,int index_max){
     }
     //인제 프로그램을 실행하는 코드
     //먼저, 레지스터를 생성한다.
-    /*
-    char *R_a = make_var(3); //accumulator register
-    char *R_x = make_var(3); //index register
-    char *R_l = make_var(3); //linkage register
-    */
     int PC; // program counter
-    //int SW;// status word? 애 이름 제대로 알아내기
-
-    //printf("value! %d", *(variable_list[1].ptr+2*24));
 
     int *RegisterList[4];
     for(short i=0;i<4;i++){
@@ -451,20 +447,8 @@ int assembler(struct Word *keywords,int index_max){
     }
     printf("int size: %p\n", sizeof(int));
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
-    //*(RegisterList[0]+8*sizeof(int)) = 4;
-    //*RegisterList[1]=4;
-
-    /*for(short i=0; i<4;i++){
-        printf("i: %d address %p value %d\n",i,RegisterList[i],*RegisterList[i]);
-    }
-    */
-    //*R_a = *R_x = *R_l = SW = 0;// reset registers to zero
     PC= 0;
-    /*
-    for(int array_i =0; array_i< variable_list[2].array_max; array_i++){
-        printf("%d:%d ",array_i, *(variable_list[2].ptr+array_i*24) );
-    }
-    */
+
 
     printf("\nSIC code now executes!\n===============================\n");
 
@@ -537,48 +521,116 @@ void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_v
 }
 
 void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
-    if(to_variable->is_array == 1){
-        if(instruction <13){
-            if(instruction == 11) // STA
-                *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = *RegisterAddress[0] ;
-        else {// STCH
-            //printf("here: %d \n ",RegisterAddress[0]&16776960 );
-            // 1111_1111 in binary is 255 or 256?
-            to_variable->ptr[to_executable->variable_index] = 255 & *RegisterAddress[0] ; // 255 it is!
-        }
-    }
-        else{
-            if(instruction==13){ //STL
-                *to_variable->ptr = *RegisterAddress[2] ; // store value from linkage register
-            }
-            else{ // STX
-                *to_variable->ptr = *RegisterAddress[1] ; // store value from index register
-            }
-        }
-    }
-    else{
-        if(instruction <13){
-            if(instruction == 11){ // STA
-                struct bit_shield_24 shield_temp;
-                shield_temp.data = *RegisterAddress[0];
-                *to_variable->ptr =  shield_temp.data;
-            }
-        else {// STCH
-            //printf("here: %d \n ",RegisterAddress[0]&16776960 );
-            // 1111_1111 in binary is 255 or 256?
-            *to_variable->ptr = 255 & *RegisterAddress[0] ; // 255 it is!
-        }
-    }
-        else{
-            if(instruction==13){ //STL
-                *to_variable->ptr = *RegisterAddress[2] ; // store value from linkage register
-            }
-            else{ // STX
-                printf("rx register address: %p in STL\n",&RegisterAddress[1]);
-                *to_variable->ptr = *RegisterAddress[1] ; // store value from index register
+    //struct bit_shield_24 shield_register;
+
+    if(to_variable->data_type==0){  // variable type is int
+        struct bit_shield_24 shield_variable;
+
+        if(to_variable->is_array == 1){
+            if(instruction <13){
+                if(instruction == 11){ // STA
+                    shield_variable.data = *RegisterAddress[0];
+                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = shield_variable.data;
+                }
+            else {// STCH
+                //printf("here: %d \n ",RegisterAddress[0]&16776960 );
+                // 1111_1111 in binary is 255 or 256?
+                shield_variable.data = *RegisterAddress[0];
+                *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = 255 & shield_variable.data ; // 255 it is!
             }
         }
+            else{
+                if(instruction==13){ //STL
+                    shield_variable.data = *RegisterAddress[2];
+                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from linkage register
+                }
+                else{ // STX
+                    shield_variable.data = *RegisterAddress[1];
+                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from index register
+                }
+            }
+        }
+        else{ // variable is not array
+            if(instruction <13){
+                if(instruction == 11){ // STA
+                    shield_variable.data = *RegisterAddress[0];
+                    *to_variable->ptr =  shield_variable.data;
+                }
+            else {// STCH
+                //printf("here: %d \n ",RegisterAddress[0]&16776960 );
+                // 1111_1111 in binary is 255 or 256?
+                shield_variable.data = *RegisterAddress[0];
+                *to_variable->ptr = 255 & shield_variable.data; // 255 it is!
+            }
+        }
+            else{
+                if(instruction==13){ //STL
+                    shield_variable.data = *RegisterAddress[2];
+                    *to_variable->ptr = shield_variable.data ; // store value from linkage register
+                }
+                else{ // STX
+                    //printf("rx register address: %p in STL\n",&RegisterAddress[1]);
+                    shield_variable.data = *RegisterAddress[1];
+                    *to_variable->ptr =  shield_variable.data; // store value from index register
+                }
+            }
+        }
     }
+    else{ // variable type is char
+        struct bit_shield_8 shield_variable;
+
+        if(to_variable->is_array == 1){
+            if(instruction <13){
+                if(instruction == 11){ // STA
+                    shield_variable.data = *RegisterAddress[0];
+                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = shield_variable.data;
+                }
+            else {// STCH
+                //printf("here: %d \n ",RegisterAddress[0]&16776960 );
+                // 1111_1111 in binary is 255 or 256?
+                shield_variable.data = *RegisterAddress[0];
+                *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = 255 & shield_variable.data ; // 255 it is!
+            }
+        }
+            else{
+                if(instruction==13){ //STL
+                    shield_variable.data = *RegisterAddress[2];
+                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from linkage register
+                }
+                else{ // STX
+                    shield_variable.data = *RegisterAddress[1];
+                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from index register
+                }
+            }
+        }
+        else{ // variable is not array
+            if(instruction <13){
+                if(instruction == 11){ // STA
+                    shield_variable.data = *RegisterAddress[0];
+                    *to_variable->ptr =  shield_variable.data;
+                }
+            else {// STCH
+                //printf("here: %d \n ",RegisterAddress[0]&16776960 );
+                // 1111_1111 in binary is 255 or 256?
+                shield_variable.data = *RegisterAddress[0];
+                *to_variable->ptr = 255 & shield_variable.data; // 255 it is!
+            }
+        }
+            else{
+                if(instruction==13){ //STL
+                    shield_variable.data = *RegisterAddress[2];
+                    *to_variable->ptr = shield_variable.data ; // store value from linkage register
+                }
+                else{ // STX
+                    //printf("rx register address: %p in STL\n",&RegisterAddress[1]);
+                    shield_variable.data = *RegisterAddress[1];
+                    *to_variable->ptr =  shield_variable.data; // store value from index register
+                }
+            }
+        }
+    }
+
+
 
 }
 
