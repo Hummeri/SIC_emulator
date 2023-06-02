@@ -14,7 +14,7 @@ int main(){
     printf("data: %d\n", shield.data );
     // overflow test
     //24 bit max value (unsigned!) is 16777216
-    shield.data = atoi("16777217");
+    shield.data = atoi("16777216");
     printf("saved data: %d original value %d \n", shield.data, atoi("16777217") );
 
 
@@ -24,15 +24,16 @@ int main(){
     int number = atoi(&input);
     // printf("input %d \n",number);
     struct bit_shield *shield_ptr= (struct bit_shield *)malloc(sizeof(struct bit_shield)*number );
-    putchar('h');
+    //putchar('h');
 
       for(int i =0; i<number;i++){
-          shield_ptr[i].data= 24;
+          (shield_ptr+ sizeof(struct bit_shield)*i )->data= 24;
+          printf("i: %d pointer %p VALUE %d\n",i, (shield_ptr+ sizeof(struct bit_shield)*i ), *(shield_ptr+ sizeof(struct bit_shield)*i ) );
     }
 
 
     for(int i =0; i<number;i++)
-        printf("i: %d value: %d\n",i , shield_ptr[i].data );
+        printf("i: %d value: %d \n",i , *(shield_ptr+ sizeof(struct bit_shield)*i ) );
 
 
 }
