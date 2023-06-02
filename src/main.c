@@ -43,7 +43,7 @@ struct bit_shield_24{
 };
 
 struct bit_shield_8{
-    unsigned int data : 24;
+    unsigned int data : 8;
 };
 
 bool num_check(char *address);
