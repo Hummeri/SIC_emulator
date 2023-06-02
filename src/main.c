@@ -37,6 +37,15 @@ struct label{
     char name[WORD_MAX_LENGTH];
     int to_here;
 };
+
+struct bit_shield_24{
+    unsigned int data : 24;
+};
+
+struct bit_shield_8{
+    unsigned int data : 24;
+};
+
 bool num_check(char *address);
 short data_check(char *address2);
 
@@ -202,11 +211,13 @@ int assembler(struct Word *keywords,int index_max){
                     *variable_list[var_index].ptr =keywords[index+2].words[2];
 
                     variable_list[var_index].is_array=0;
+                    variable_list[var_index].data_type = 1;
 
                     printf("BYTE: name:%s value: %c is_array: %d\n",variable_list[var_index].name ,*variable_list[var_index].ptr,variable_list[var_index].is_array);
                 }
             }
             else if(keywords[index+1].type == 28){  //변수 타입 WORD
+                variable_list[var_index].data_type = 0;
 
                 int comma_count =0;
                 for(int i =0; keywords[index+2].words[i] != '\0' && i < WORD_MAX_LENGTH; i++){
@@ -228,7 +239,7 @@ int assembler(struct Word *keywords,int index_max){
                         if(keywords[index+2].words[i] == ','){
                             buffer[buffer_index]='\0';
                             printf("that string is %d as a number\n ",atoi(&buffer[0]) );
-                            *(variable_list[var_index].ptr+ (pointer_offset*24) )=atoi(&buffer[0]);
+                            *(variable_list[var_index].ptr+ pointer_offset*24 )=atoi(&buffer[0]); //check atoi return type!
                             buffer_index=0;
                             pointer_offset++;
                         }
@@ -242,12 +253,13 @@ int assembler(struct Word *keywords,int index_max){
                             printf("buffer last : %s\n",&buffer[0]);
 
                             printf("that string is %d as a number\n ",atoi(&buffer[0]) );
-                            *(variable_list[var_index].ptr+ (pointer_offset*24) )=atoi(&buffer[0]);
+                            struct bit_shield_24 shield_temp;
+                            shield_temp.data = atoi(&buffer[0]);
+                            *(variable_list[var_index].ptr+ pointer_offset*24 )= shield_temp.data;
                             printf("value here: %d\n",*(variable_list[var_index].ptr+pointer_offset*24));
 
                             variable_list[var_index].is_array=1;
                             variable_list[var_index].array_max = comma_count +1;
-                            variable_list[var_index].data_type = 0;
                             break;
                         }
 
@@ -261,6 +273,7 @@ int assembler(struct Word *keywords,int index_max){
             else if(keywords[index+1].type == 29) { //RESB
                 int temp = atoi(&keywords[index+2].words[0]);
                 variable_list[var_index].ptr = make_var( temp );
+                variable_list[var_index].data_type = 1;
 
                 if(temp > 1){
                     variable_list[var_index].is_array=1;
@@ -274,6 +287,7 @@ int assembler(struct Word *keywords,int index_max){
             else if(keywords[index+1].type == 30){ // RESW
                 int temp = atoi(&keywords[index+2].words[0])*3;
                 variable_list[var_index].ptr = make_var( temp );
+                variable_list[var_index].data_type = 0;
                 if(temp >1){
                     variable_list[var_index].is_array=1;
                     variable_list[var_index].array_max=temp;
@@ -446,9 +460,11 @@ int assembler(struct Word *keywords,int index_max){
     */
     //*R_a = *R_x = *R_l = SW = 0;// reset registers to zero
     PC= 0;
+    /*
     for(int array_i =0; array_i< variable_list[2].array_max; array_i++){
         printf("%d:%d ",array_i, *(variable_list[2].ptr+array_i*24) );
     }
+    */
 
     printf("\nSIC code now executes!\n===============================\n");
 
@@ -479,7 +495,9 @@ int assembler(struct Word *keywords,int index_max){
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
                 printf("array ! %s: ",&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
-                    printf("%d:%d ",array_i, *(variable_list[var_i].ptr+array_i*24) );
+                    struct bit_shield_24 shield_temp;
+                    shield_temp.data = *(variable_list[var_i].ptr+array_i*24); // probably not necessary here... but if it was, I need to add bit shields everywhere
+                    printf("%d:%d ",array_i, shield_temp.data );
                 }
             }
             else{
@@ -540,8 +558,11 @@ void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_var
     }
     else{
         if(instruction <13){
-            if(instruction == 11) // STA
-                *to_variable->ptr = *RegisterAddress[0] ;
+            if(instruction == 11){ // STA
+                struct bit_shield_24 shield_temp;
+                shield_temp.data = *RegisterAddress[0];
+                *to_variable->ptr =  shield_temp.data;
+            }
         else {// STCH
             //printf("here: %d \n ",RegisterAddress[0]&16776960 );
             // 1111_1111 in binary is 255 or 256?
@@ -571,8 +592,11 @@ void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_vari
             mem_size = 8;
 
         if(instruction<9){
-        if(instruction == 7) // LDA
-            *RegisterAddress[0] = *(to_variable->ptr+*RegisterAddress[1]*mem_size); // this code works!!!!!
+        if(instruction == 7){ // LDA
+            struct bit_shield_24 shield_temp;
+            shield_temp.data= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
+            *RegisterAddress[0] = shield_temp.data;
+        }
         else{ // LDCH
             // bit mask 0b 1111_1111 to get char value only
             // lets hope c uses small edian...
