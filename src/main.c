@@ -54,7 +54,7 @@ struct bit24 * make_var(int how_many_word);
 
 void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void LoadFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-// void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
+void StoreFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 // void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 // void IOFunction(int instruction,int *Register_A);
 int  run_sic();
@@ -208,9 +208,10 @@ int assembler(struct Word *keywords,int index_max){
 
             if( keywords[index+1].type == 27) { //변수 타입 BYTE 얘는 CHAR1 BYTE C'Z' 같은 형식을 사용할 수 있으니 저 c와 '를 검사하는 걸 넣어야한다.
                 variable_list[var_index].ptr = make_var(1);
+                variable_list[var_index].ptr->data=0;
 
                 if( data_check( &keywords[index+2].words[0] ) == 2){ // 단일 문자 저장
-                    variable_list[var_index].ptr->data =keywords[index+2].words[2];
+                    variable_list[var_index].ptr->data =keywords[index+2].words[2]; // 여기 문제 있음... !PROBLEM
 
                     variable_list[var_index].is_array=0;
                     variable_list[var_index].data_type = 1;
@@ -463,22 +464,27 @@ int assembler(struct Word *keywords,int index_max){
         }
         else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
             LoadFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
-        }/*
-        else if(executable_list[i].instruction>10 && executable_list[i].instruction < 15){ // 7~10 are load instructions
-            StoreFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
+        else if(executable_list[i].instruction>10 && executable_list[i].instruction < 15){ // 10~15 are  instructions
+            StoreFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
+        }/*
         else if(executable_list[i].instruction>14 && executable_list[i].instruction < 17){ //these are compare functions
             CompareFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
 */
         printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
-        //printf("rx in loop register address: %p\n", RegisterList[1]);
 
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
             // printf(" isarray:%d ", variable_list[var_i].is_array);
             if( variable_list[var_i].is_array == 0){
-                printf("%s: %d \n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data);
+                if(variable_list[var_i].data_type ==1){ //if data is char
+                    // variable_list[var_i].ptr->data = 'c';
+                    printf("%s: %d : %d\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data,'c');
+                }
+                else{
+                    printf("%s: %d !\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data);
+                }
             }
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
                 printf("array %s: ",&variable_list[var_i].name[0]);
@@ -492,15 +498,14 @@ int assembler(struct Word *keywords,int index_max){
                 printf("variable error!\n");
             }
         }
-        //printf("value! %d", *(variable_list[1].ptr+2*24));
-        printf("\n\n");
+        printf("\n");
 
     }
     return 0;
-
+}
 
 /*
- *
+
 void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     // 0 for equal '='
@@ -525,6 +530,7 @@ void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_v
             *RegisterAddress[3] = 0;
     }
 }
+*/
 
 void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     //struct bit_shield_24 shield_register;
@@ -639,7 +645,7 @@ void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_var
 
 
 }
-*/
+
 
 void LoadFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     struct bit24 size_emulation;
