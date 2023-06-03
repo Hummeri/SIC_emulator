@@ -1,0 +1,6 @@
+(RegisterAddress)->data = size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data
+(RegisterAddress+sizeof(struct bit24)*1)->data
+
+printf("label index: %d index in label: %d  instruction type: %d variable index: %d\n",executable_list[i].label_index,label_list[executable_list[i].label_index-1].to_here,executable_list[i].instruction,executable_list[i].variable_index);
+            // label_list[executable_list[i].label_index-1].to_here 에서 보면 executable_list[i].label_index값에 -1이 들어가 있는데, 이는 struct executable가 label_index값이 0일때 라벨이 없다고 판단해서 그렇다.
+        }

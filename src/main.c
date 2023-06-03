@@ -55,7 +55,7 @@ struct bit24 * make_var(int how_many_word);
 void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void LoadFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void StoreFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-// void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
+void CompareFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 // void IOFunction(int instruction,int *Register_A);
 int  run_sic();
 
@@ -438,6 +438,7 @@ int assembler(struct Word *keywords,int index_max){
     //인제 프로그램을 실행하는 코드
     //먼저, 레지스터를 생성한다.
     int PC; // program counter
+    int return_index=0; // for J SUB and RSUB
 
     struct bit24 *RegisterList= make_var(4);
 
@@ -466,14 +467,42 @@ int assembler(struct Word *keywords,int index_max){
         else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
             LoadFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
-        else if(executable_list[i].instruction>10 && executable_list[i].instruction < 15){ // 10~15 are  instructions
+        else if(executable_list[i].instruction>10 && executable_list[i].instruction < 15){ // 11~14 are  instructions
             StoreFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
-        }/*
-        else if(executable_list[i].instruction>14 && executable_list[i].instruction < 17){ //these are compare functions
-            CompareFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
-*/
-        printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
+        else if(executable_list[i].instruction>14 && executable_list[i].instruction < 17){ //15,16 are compare functions
+            CompareFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
+        }
+        else if(executable_list[i].instruction>16 && executable_list[i].instruction < 23){ // finally, junction functions! 17~22
+            if(executable_list[i].instruction == 17){ // J
+                i=label_list[executable_list[i].label_index-1].to_here;
+            }
+            else if(executable_list[i].instruction == 18){ // JEQ
+                if( (RegisterList+sizeof(struct bit24)*3)->data == 0){
+                    i=label_list[executable_list[i].label_index-1].to_here;
+                }
+            }
+            else if(executable_list[i].instruction == 19){ // JGT
+                if( (RegisterList+sizeof(struct bit24)*3)->data == 1){
+                    i=label_list[executable_list[i].label_index-1].to_here;
+                }
+            }
+            else if(executable_list[i].instruction == 20){ // JLT
+                if( (RegisterList+sizeof(struct bit24)*3)->data == 2){
+                    i=label_list[executable_list[i].label_index-1].to_here;
+                }
+            }
+            else if(executable_list[i].instruction == 21){ // J SUB
+                    i=label_list[executable_list[i].label_index-1].to_here;
+                    return_index=i;
+                }
+                else{ // R SUB
+                    i= return_index;
+                }
+                printf("label index: %d label line index %d\n",label_list[executable_list[i].label_index-1],label_list[executable_list[i].label_index-1].to_here);
+            }
+
+        printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i/*+1*/ ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
 
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
@@ -500,38 +529,50 @@ int assembler(struct Word *keywords,int index_max){
             }
         }
         printf("\n");
-
+        // char car = getchar();
     }
     return 0;
 }
 
-/*
 
-void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
+
+void CompareFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     // 0 for equal '='
     //1 when register value is Greater than variable value '>'
     // 2 when resgister value is smaller than variable value '<'
+    struct bit24 size_emulation;
+    if(to_variable->data_type==1)// char type
+        size_emulation.data = 255;
+    else //int type
+        size_emulation.data = 16777215;
+
+    struct bit24 offset;
+    offset.data=0;
+
+    if(to_variable->is_array == 1){ //variable is array
+        offset.data=(RegisterAddress+sizeof(struct bit24)*1)->data;
+    }
 
     if(instruction==15){ // COMP
-        if( *RegisterAddress[0] > *to_variable->ptr) // Store value '>' to SW, will branch when JGT is used
-            *RegisterAddress[3] = 1;
-        else if( *RegisterAddress[0] < *to_variable->ptr ) // '<'
-            *RegisterAddress[3] = 2;
-        else if( *RegisterAddress[0] == *to_variable->ptr ) // '='
-            *RegisterAddress[3] = 0;
+        if( (RegisterAddress)->data > (size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data) ) // Store value '>' to SW, will branch when JGT is used
+            (RegisterAddress+sizeof(struct bit24)*3)->data = 1;
+        else if( (RegisterAddress)->data < (size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data) ) // '<'
+            (RegisterAddress+sizeof(struct bit24)*3)->data = 2;
+        else if( (RegisterAddress)->data == (size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data) ) // '='
+            (RegisterAddress+sizeof(struct bit24)*3)->data = 0;
     }
     else{ // TIX
-        *RegisterAddress[1]++;
-        if( *RegisterAddress[0] > to_variable->ptr[*RegisterAddress[1] ]) // Store value '>' to SW, will branch when JGT is used
-            *RegisterAddress[3] = 1;
-        else if( *RegisterAddress[0] < to_variable->ptr[*RegisterAddress[1] ] ) // '<'
-            *RegisterAddress[3] = 2;
-        else if( *RegisterAddress[0] == to_variable->ptr[*RegisterAddress[1] ] ) // '='
-            *RegisterAddress[3] = 0;
+        (RegisterAddress+sizeof(struct bit24)*1)->data++;
+        if( (RegisterAddress)->data > (size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data) ) // Store value '>' to SW, will branch when JGT is used
+            (RegisterAddress+sizeof(struct bit24)*3)->data = 1;
+        else if( (RegisterAddress)->data < (size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data) ) // '<'
+            (RegisterAddress+sizeof(struct bit24)*3)->data = 2;
+        else if( (RegisterAddress)->data == (size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data) ) // '='
+            (RegisterAddress+sizeof(struct bit24)*3)->data = 0;
     }
 }
-*/
+
 
 void StoreFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
     struct bit24 size_emulation;
