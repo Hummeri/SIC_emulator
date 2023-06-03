@@ -28,6 +28,7 @@ int main(){
 
       for(int i =0; i<number;i++){
           (shield_ptr+ sizeof(struct bit_shield)*i )->data= 24;
+
           printf("i: %d pointer %p VALUE %d\n",i, (shield_ptr+ sizeof(struct bit_shield)*i ), *(shield_ptr+ sizeof(struct bit_shield)*i ) );
     }
 
