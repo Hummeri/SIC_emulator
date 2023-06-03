@@ -53,7 +53,7 @@ short data_check(char *address2);
 struct bit24 * make_var(int how_many_word);
 
 void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-// void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
+void LoadFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 // void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 // void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 // void IOFunction(int instruction,int *Register_A);
@@ -437,16 +437,6 @@ int assembler(struct Word *keywords,int index_max){
     //먼저, 레지스터를 생성한다.
     int PC; // program counter
 
-
-
-    // printf("Im here\n!");
-
-    // run_sic();
-    // int *i;
-    // i = malloc(sizeof(int));
-
-
-
     struct bit24 *RegisterList= make_var(4);
 
     for(short i=0;i<4;i++){
@@ -469,11 +459,11 @@ int assembler(struct Word *keywords,int index_max){
     for(int i=0;i<executable_total_count;i++){ // now, finally a code that runs everything.
 
         if(executable_list[i].instruction>0 && executable_list[i].instruction < 7){ // 1~6 are instruction that perform Math calculations on the value.
-            MathCalculate(executable_list[i].instruction, &RegisterList[0],&variable_list[executable_list[i].variable_index],&executable_list[i]);
-        }/*
-        else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
-            LoadFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
+            MathCalculate(executable_list[i].instruction, RegisterList,&variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
+        else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
+            LoadFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
+        }/*
         else if(executable_list[i].instruction>10 && executable_list[i].instruction < 15){ // 7~10 are load instructions
             StoreFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
@@ -486,16 +476,17 @@ int assembler(struct Word *keywords,int index_max){
 
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
-            printf(" isarray:%d ", variable_list[var_i].is_array);
+            // printf(" isarray:%d ", variable_list[var_i].is_array);
             if( variable_list[var_i].is_array == 0){
-                printf("%s: %d ",&variable_list[var_i].name[0], variable_list[var_i].ptr->data);
+                printf("%s: %d \n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data);
             }
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
-                printf("array ! %s: ",&variable_list[var_i].name[0]);
+                printf("array %s: ",&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
 
                     printf("%d:%d ",array_i, (variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data );
                 }
+                putchar('\n');
             }
             else{
                 printf("variable error!\n");
@@ -507,13 +498,6 @@ int assembler(struct Word *keywords,int index_max){
     }
     return 0;
 
-}
-int run_sic(){
-        int *testptr;
-    testptr= (int *)calloc(1,sizeof(int));
-    free(testptr);
-    return 0;
-}
 
 /*
  *
@@ -655,59 +639,46 @@ void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_var
 
 
 }
+*/
 
-void LoadFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
+void LoadFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
+    struct bit24 size_emulation;
+    if(to_variable->data_type==1)// char type
+        size_emulation.data = 255;
+    else //int type
+        size_emulation.data = 16777215;
+
+    struct bit24 offset;
+    offset.data=0;
+
+    if(to_variable->is_array == 1){ //variable is array
+        offset.data=(RegisterAddress+sizeof(struct bit24)*1)->data;
+    }
+
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
-    if( to_variable->is_array == 1){ //variable is array
-        printf("load array! in load function %p \n");
-        int mem_size = 24;
-        printf("data type %d ",to_variable->data_type);
-        if(to_variable->data_type==1)// char type
-            mem_size = 8;
 
-        if(instruction<9){
+    if(instruction<9){
         if(instruction == 7){ // LDA
-            struct bit_shield_24 shield_temp;
-            shield_temp.data= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
-            *RegisterAddress[0] = shield_temp.data;
+            (RegisterAddress)->data = size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data ;
         }
         else{ // LDCH
             // bit mask 0b 1111_1111 to get char value only
             // lets hope c uses small edian...
             // the binary value above is 255
-            *RegisterAddress[0] = 255 & *(to_variable->ptr+*RegisterAddress[1]*mem_size); // it works!
+            (RegisterAddress)->data = 255 &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
         }
     }
-        else{
-            if(instruction == 9) // LDL
-                *RegisterAddress[2] = *(to_variable->ptr+*RegisterAddress[1]*mem_size);
-            if(instruction == 10){ // LDX
-                *RegisterAddress[1] = *(to_variable->ptr+*RegisterAddress[1]*mem_size);
-                //printf("Rx address in ldx function %d",&RegisterAddress[1]);
-            }
+    else{
+        if(instruction == 9){ // LDL
+            (RegisterAddress+sizeof(struct bit24)*2)->data = size_emulation.data &(to_variable->ptr +offset.data*sizeof(struct bit24) )->data ;
         }
-    }
-    else{ // variable is not a array
-        if(instruction<9){
-        if(instruction == 7) // LDA
-            *RegisterAddress[0] = *to_variable->ptr;
-        else{ // LDCH
-            // bit mask 0b 1111_1111 to get char value only
-            // lets hope c uses small edian...
-            // the binary value above is 255
-            *RegisterAddress[0] = 255 & *to_variable->ptr; // it works!
-        }
-    }
-        else{
-            if(instruction == 9) // LDL
-                *RegisterAddress[2] = *to_variable->ptr;
-            if(instruction == 10) // LDX
-                *RegisterAddress[1] = *to_variable->ptr;
+        if(instruction == 10){ // LDX
+            (RegisterAddress+sizeof(struct bit24)*1)->data = size_emulation.data &(to_variable->ptr +offset.data*sizeof(struct bit24) )->data ;
         }
     }
 
 }
-*/
+
 
 void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable, struct executable * to_executable){
     struct bit24 size_emulation;
@@ -719,8 +690,6 @@ void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable
     struct bit24 offset;
     offset.data=0;
 
-    ;
-
     if(to_variable->is_array == 1){ //variable is array
         offset.data=(RegisterAddress+sizeof(struct bit24)*1)->data;
     }
@@ -728,23 +697,23 @@ void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable
         if(instruction<4){
             if(instruction==1){ //ADD
                 //printf("magic! Ra: %d variable value: %d",**Register_A,**to_variable->ptr)
-                (RegisterAddress+sizeof(struct bit24)*offset.data)->data +=
-                size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data ;
+                (RegisterAddress)->data +=(
+                size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
 
                 //(variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data
             }
         else if(instruction==2) // SUB
-            (RegisterAddress+sizeof(struct bit24)*offset.data)->data -= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
+            (RegisterAddress)->data -= ( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
         else if(instruction==3) //MUL
-            (RegisterAddress+sizeof(struct bit24)*offset.data)->data *= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
+            (RegisterAddress)->data *= ( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
         }
         else{
             if(instruction==4) //DIV
-                (RegisterAddress+sizeof(struct bit24)*offset.data)->data /= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
+                (RegisterAddress)->data /= ( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
             else if(instruction==5) // AND
-                (RegisterAddress+sizeof(struct bit24)*offset.data)->data &= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
+                (RegisterAddress)->data &=( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
             else if(instruction==6) // OR
-                (RegisterAddress+sizeof(struct bit24)*offset.data)->data |= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
+                (RegisterAddress)->data |= ( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
         }
 
 }
