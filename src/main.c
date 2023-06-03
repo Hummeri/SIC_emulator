@@ -439,7 +439,7 @@ int assembler(struct Word *keywords,int index_max){
 
 
 
-    printf("Im here\n!");
+    // printf("Im here\n!");
 
     // run_sic();
     // int *i;
@@ -448,13 +448,13 @@ int assembler(struct Word *keywords,int index_max){
 
 
     struct bit24 *RegisterList= make_var(4);
-/*
+
     for(short i=0;i<4;i++){
 
         (RegisterList+sizeof(struct bit24)*i)->data= 0;
     }
 
-    printf("Im here\n!");
+    printf("register default value\n");
     for(short i=0; i<4;i++){
         printf("i: %d address %p value %d\n",i,(RegisterList+sizeof(struct bit24)*i),(RegisterList+sizeof(struct bit24)*i)->data);
     }
@@ -462,15 +462,15 @@ int assembler(struct Word *keywords,int index_max){
 
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     PC= 0;
-    */
+
 
     printf("\nSIC code now executes!\n===============================\n");
 
     for(int i=0;i<executable_total_count;i++){ // now, finally a code that runs everything.
-/*
+
         if(executable_list[i].instruction>0 && executable_list[i].instruction < 7){ // 1~6 are instruction that perform Math calculations on the value.
             MathCalculate(executable_list[i].instruction, &RegisterList[0],&variable_list[executable_list[i].variable_index],&executable_list[i]);
-        }
+        }/*
         else if(executable_list[i].instruction>6 && executable_list[i].instruction < 11){ // 7~10 are load instructions
             LoadFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
@@ -480,10 +480,10 @@ int assembler(struct Word *keywords,int index_max){
         else if(executable_list[i].instruction>14 && executable_list[i].instruction < 17){ //these are compare functions
             CompareFunction(executable_list[i].instruction, &RegisterList[0] , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
-
+*/
         printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i+1 ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
         //printf("rx in loop register address: %p\n", RegisterList[1]);
-*/
+
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
             printf(" isarray:%d ", variable_list[var_i].is_array);
@@ -729,23 +729,23 @@ void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable
             if(instruction==1){ //ADD
                 //printf("magic! Ra: %d variable value: %d",**Register_A,**to_variable->ptr)
                 (RegisterAddress+sizeof(struct bit24)*offset.data)->data +=
-                (to_variable->ptr + offset.data*sizeof(struct bit24) )->data ;
+                size_emulation.data &(to_variable->ptr + offset.data*sizeof(struct bit24) )->data ;
 
                 //(variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data
-            } } /*
+            }
         else if(instruction==2) // SUB
-            *RegisterAddress[0] -= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
+            (RegisterAddress+sizeof(struct bit24)*offset.data)->data -= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
         else if(instruction==3) //MUL
-            *RegisterAddress[0] *= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
+            (RegisterAddress+sizeof(struct bit24)*offset.data)->data *= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
         }
         else{
             if(instruction==4) //DIV
-                *RegisterAddress[0] /= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
+                (RegisterAddress+sizeof(struct bit24)*offset.data)->data /= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
             else if(instruction==5) // AND
-                *RegisterAddress[0] &= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
+                (RegisterAddress+sizeof(struct bit24)*offset.data)->data &= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
             else if(instruction==6) // OR
-                *RegisterAddress[0] |= *(to_variable->ptr+*RegisterAddress[1]*mem_size);
-        } */
+                (RegisterAddress+sizeof(struct bit24)*offset.data)->data |= size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data;
+        }
 
 }
 
