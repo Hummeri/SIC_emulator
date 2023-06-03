@@ -209,12 +209,13 @@ int assembler(struct Word *keywords,int index_max){
             if( keywords[index+1].type == 27) { //변수 타입 BYTE 얘는 CHAR1 BYTE C'Z' 같은 형식을 사용할 수 있으니 저 c와 '를 검사하는 걸 넣어야한다.
                 variable_list[var_index].ptr = make_var(1);
                 variable_list[var_index].ptr->data=0;
+                variable_list[var_index].data_type = 1;
 
                 if( data_check( &keywords[index+2].words[0] ) == 2){ // 단일 문자 저장
                     variable_list[var_index].ptr->data =keywords[index+2].words[2]; // 여기 문제 있음... !PROBLEM
 
                     variable_list[var_index].is_array=0;
-                    variable_list[var_index].data_type = 1;
+
 
                     printf("BYTE: name:%s value: %c is_array: %d\n",variable_list[var_index].name ,variable_list[var_index].ptr->data,variable_list[var_index].is_array);
                 }
@@ -483,7 +484,7 @@ int assembler(struct Word *keywords,int index_max){
                     printf("%s: %d : %d\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data,'c');
                 }
                 else{
-                    printf("%s: %d !\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data);
+                    printf("%s: %d\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data);
                 }
             }
             else if( variable_list[var_i].is_array == 1){ // print out the whole array.
@@ -532,115 +533,38 @@ void CompareFunction(int instruction,int **RegisterAddress,struct variable *to_v
 }
 */
 
-void StoreFunction(int instruction,int **RegisterAddress,struct variable *to_variable,struct executable * to_executable){
-    //struct bit_shield_24 shield_register;
+void StoreFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable){
+    struct bit24 size_emulation;
+    if(to_variable->data_type==1)// char type
+        size_emulation.data = 255;
+    else //int type
+        size_emulation.data = 16777215;
 
-    if(to_variable->data_type==0){  // variable type is int
-        struct bit_shield_24 shield_variable;
+    struct bit24 offset;
+    offset.data=0;
 
-        if(to_variable->is_array == 1){
-            if(instruction <13){
-                if(instruction == 11){ // STA
-                    shield_variable.data = *RegisterAddress[0];
-                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = shield_variable.data;
-                }
-            else {// STCH
-                //printf("here: %d \n ",RegisterAddress[0]&16776960 );
-                // 1111_1111 in binary is 255 or 256?
-                shield_variable.data = *RegisterAddress[0];
-                *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = 255 & shield_variable.data ; // 255 it is!
-            }
-        }
-            else{
-                if(instruction==13){ //STL
-                    shield_variable.data = *RegisterAddress[2];
-                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from linkage register
-                }
-                else{ // STX
-                    shield_variable.data = *RegisterAddress[1];
-                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from index register
-                }
-            }
-        }
-        else{ // variable is not array
-            if(instruction <13){
-                if(instruction == 11){ // STA
-                    shield_variable.data = *RegisterAddress[0];
-                    *to_variable->ptr =  shield_variable.data;
-                }
-            else {// STCH
-                //printf("here: %d \n ",RegisterAddress[0]&16776960 );
-                // 1111_1111 in binary is 255 or 256?
-                shield_variable.data = *RegisterAddress[0];
-                *to_variable->ptr = 255 & shield_variable.data; // 255 it is!
-            }
-        }
-            else{
-                if(instruction==13){ //STL
-                    shield_variable.data = *RegisterAddress[2];
-                    *to_variable->ptr = shield_variable.data ; // store value from linkage register
-                }
-                else{ // STX
-                    //printf("rx register address: %p in STL\n",&RegisterAddress[1]);
-                    shield_variable.data = *RegisterAddress[1];
-                    *to_variable->ptr =  shield_variable.data; // store value from index register
-                }
-            }
-        }
+    if(to_variable->is_array == 1){ //variable is array
+        offset.data=(RegisterAddress+sizeof(struct bit24)*1)->data;
     }
-    else{ // variable type is char
-        struct bit_shield_8 shield_variable;
 
-        if(to_variable->is_array == 1){
-            if(instruction <13){
-                if(instruction == 11){ // STA
-                    shield_variable.data = *RegisterAddress[0];
-                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = shield_variable.data;
-                }
+        if(instruction <13){
+            if(instruction == 11){ // STA
+                (to_variable->ptr + offset.data*sizeof(struct bit24) )->data = size_emulation.data & (RegisterAddress)->data;
+            }
             else {// STCH
                 //printf("here: %d \n ",RegisterAddress[0]&16776960 );
                 // 1111_1111 in binary is 255 or 256?
-                shield_variable.data = *RegisterAddress[0];
-                *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) = 255 & shield_variable.data ; // 255 it is!
+                (to_variable->ptr + offset.data*sizeof(struct bit24) )->data = 255 & (RegisterAddress)->data; // 255 it is!
             }
         }
             else{
                 if(instruction==13){ //STL
-                    shield_variable.data = *RegisterAddress[2];
-                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from linkage register
+                    (to_variable->ptr + offset.data*sizeof(struct bit24) )->data =  size_emulation.data & (RegisterAddress+sizeof(struct bit24)*2)->data; // store value from linkage register
                 }
                 else{ // STX
-                    shield_variable.data = *RegisterAddress[1];
-                    *( &to_variable->ptr[to_executable->variable_index]+ *RegisterAddress[1] * 24) =  shield_variable.data; // store value from index register
+                    (to_variable->ptr + offset.data*sizeof(struct bit24) )->data =  size_emulation.data & (RegisterAddress+sizeof(struct bit24)*1)->data; // store value from index register
                 }
             }
-        }
-        else{ // variable is not array
-            if(instruction <13){
-                if(instruction == 11){ // STA
-                    shield_variable.data = *RegisterAddress[0];
-                    *to_variable->ptr =  shield_variable.data;
-                }
-            else {// STCH
-                //printf("here: %d \n ",RegisterAddress[0]&16776960 );
-                // 1111_1111 in binary is 255 or 256?
-                shield_variable.data = *RegisterAddress[0];
-                *to_variable->ptr = 255 & shield_variable.data; // 255 it is!
-            }
-        }
-            else{
-                if(instruction==13){ //STL
-                    shield_variable.data = *RegisterAddress[2];
-                    *to_variable->ptr = shield_variable.data ; // store value from linkage register
-                }
-                else{ // STX
-                    //printf("rx register address: %p in STL\n",&RegisterAddress[1]);
-                    shield_variable.data = *RegisterAddress[1];
-                    *to_variable->ptr =  shield_variable.data; // store value from index register
-                }
-            }
-        }
-    }
 
 
 
