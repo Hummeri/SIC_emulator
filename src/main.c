@@ -22,7 +22,7 @@ int assembler(struct Word *keywords,int index_max); //make sure that functions u
 
 struct variable{
     char name[WORD_MAX_LENGTH];
-    struct bit24 *ptr; // for char variables, the 8bit memory size is "emulated"
+    struct bit24* ptr; // for char variables, the 8bit memory size is "emulated"
     bool is_array;
     int array_max;
     bool data_type;
@@ -234,7 +234,7 @@ int assembler(struct Word *keywords,int index_max){
                 }
                 else{ // a WORD array variable
                     printf("\nmade array\n");
-                    variable_list[var_index].ptr = make_var( (comma_count+1) );
+                    variable_list[var_index].ptr = make_var( MAX_ARRAY_SIZE ); //calloc(comma_count+1,sizeof(struct bit24));
                     char buffer[WORD_MAX_LENGTH];
                     int pointer_offset =0;
                     int buffer_index=0;
@@ -273,7 +273,7 @@ int assembler(struct Word *keywords,int index_max){
                         }
                     }
                 }
-                printf("WORD, name:%s value: %d is_array:%d\n",variable_list[var_index].name ,variable_list[var_index].ptr->data,variable_list[var_index].is_array);
+                printf("WORD, name:%s value: %d is_array:%d var_index: %d\n",variable_list[var_index].name ,(variable_list[var_index].ptr)->data,variable_list[var_index].is_array,var_index);
             }
             else if(keywords[index+1].type == 29) { //RESB
                 int temp = atoi(&keywords[index+2].words[0]);
@@ -442,10 +442,12 @@ int assembler(struct Word *keywords,int index_max){
     printf("Im here\n!");
 
     // run_sic();
+    // int *i;
+    // i = malloc(sizeof(int));
 
 
 
-    //struct bit24 *RegisterList= make_var(4); // for bit field structs, I need to manualy malloc it...
+    struct bit24 *RegisterList= make_var(4);
 /*
     for(short i=0;i<4;i++){
 

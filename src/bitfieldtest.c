@@ -1,47 +1,48 @@
 #include <stdio.h>
 #include <stdlib.h> // for atoi() and malloc
+#include<stdbool.h>
 
-struct bit_shield{
+struct bit24{
     unsigned int data : 24;
 };
+struct variable{
+    char name[20];
+    struct bit24 *ptr; // for char variables, the 8bit memory size is "emulated"
+    bool is_array;
+    int array_max;
+    bool data_type;
+};
+struct bit24 * make_var(int how_many_word);
 
-int * make_var(int how_many_word);
 
 int main(){
 
-    struct bit_shield shield;
-    shield.data = atoi("32");
-    printf("data: %d\n", shield.data );
-    // overflow test
-    //24 bit max value (unsigned!) is 16777216
-    shield.data = atoi("16777216");
-    printf("saved data: %d original value %d \n", shield.data, atoi("16777217") );
-
-
-
-
+    struct variable varList[10];
     char input = getchar();
+
     int number = atoi(&input);
-    // printf("input %d \n",number);
-    struct bit_shield *shield_ptr= (struct bit_shield *)malloc(sizeof(struct bit_shield)*number );
-    //putchar('h');
+    for(int varIndex=0; varIndex < 10; varIndex++){
+        varList[varIndex].ptr= make_var(5*sizeof(struct bit24));
+        for(int i=0;i<5;i++){
+            (varList[varIndex].ptr+i*sizeof(struct bit24) )->data = 24;
+        }
+    }
 
-      for(int i =0; i<number;i++){
-          (shield_ptr+ sizeof(struct bit_shield)*i )->data= 24;
-
-          printf("i: %d pointer %p VALUE %d\n",i, (shield_ptr+ sizeof(struct bit_shield)*i ), *(shield_ptr+ sizeof(struct bit_shield)*i ) );
+        for(int varIndex=0; varIndex < 10; varIndex++){
+        varList[varIndex].ptr= make_var(5*sizeof(struct bit24));
+        for(int i=0;i<5;i++){
+            (varList[varIndex].ptr+i*sizeof(struct bit24) )->data = 24;
+        }
     }
 
 
-    for(int i =0; i<number;i++)
-        printf("i: %d value: %d \n",i , *(shield_ptr+ sizeof(struct bit_shield)*i ) );
-
-
 }
 
-int * make_var(int how_many_word){ // SIC 머신에서 한 워드가 8비트이다. 레지스터는 모두 3워드, 24비트 이다.
-    int *pointer;
-    pointer = (int*)malloc(how_many_word*8);
+struct bit24 * make_var(int how_many_word){ // how_many_word 24비트 저장소 몇개?
+    struct bit24 *pointer;
+    pointer = malloc(how_many_word* sizeof(struct bit24));
     return pointer;
 }
+
+
 
