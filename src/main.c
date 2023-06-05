@@ -234,9 +234,9 @@ int assembler(struct Word *keywords,int index_max){
 
 
                             for(int i=0; i< variable_list[var_index].array_max ; i++){
-                                char temp ;
+                                char temp = keywords[index+2].words[i+2];
                                 printf("!%d.%c!\n",i,keywords[index+2].words[i+2]);
-                                //(variable_list[var_index].ptr + sizeof(struct bit24)*i)->data = temp;
+                                (variable_list[var_index].ptr + sizeof(struct bit24)*i)->data = temp;
                             }
 
                         }
@@ -567,7 +567,14 @@ int assembler(struct Word *keywords,int index_max){
                 printf("array %s: ",&variable_list[var_i].name[0]);
                 for(int array_i =0; array_i< variable_list[var_i].array_max; array_i++){
 
-                    printf("%d:%d ",array_i, (variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data );
+                    if(variable_list[var_i].data_type ==1){
+                        char output = (variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data;
+                        printf("index:%d:%d:%c ",array_i,(variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data,output);
+                    }
+                    else{
+                        printf("index:%d:%d ",array_i, (variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data );
+                    }
+
                 }
                 putchar('\n');
             }
