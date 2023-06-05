@@ -104,7 +104,7 @@ int main(int argc,char *argv[]){
                 not_empty_space=1;
                 continue;
         }
-        else if(ch==' ' || ch=='\t' && not_empty_space ){ //ch가 스페이스 일때,
+        else if( (ch==' ' || ch=='\t') && not_empty_space ){ //ch가 스페이스 일때,
             instruction_buffer[instruc_char_index]='\0'; //버퍼속의 문자를 문자열로 만듬
             strcpy(Program[word_struct_index].words , &instruction_buffer[0]);
 
@@ -194,7 +194,8 @@ int assembler(struct Word *keywords,int index_max){
         index++;
     }
     if(strcmp(keywords[index].words,"END") != 0 ){
-        printf("ERROR no END keyword found!\n");
+        error(3);
+        return 0;
     }
 
     int var_index_max = index; // 변수 배열을 생성하는 코드
@@ -360,10 +361,17 @@ int assembler(struct Word *keywords,int index_max){
     struct executable executable_list[MAX_PROGRAM_INSTRUCTIONS];
     int executable_index=0;
     int label_index=0;
+    int how_many_label_so_far=0;
     //printf("%d\n",index_max);
         while( index < var_index_start) {
             if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
                 printf("%d: instruction line with label\n",keywords[index].line);
+                 for(int i=0; i< how_many_label_so_far; i++){ // !TODO
+                    if(strcmp(&label_list[i].name[0], keywords[index].words ) == 0){ //라벨 이미 있음
+
+                    }
+                }
+
                 strcpy(&label_list[label_index].name[0], keywords[index].words);  //라벨 저장
                 label_list[label_index].to_here = executable_index;
                 label_index++;
@@ -758,6 +766,8 @@ void error(int error_mode){
             printf("no char indicator 'c' detected");
         case 2:
             printf("no char start indicator \' detected");
+        case 3:
+            printf("ERROR no END keyword found!\n");
     }
 }
 
