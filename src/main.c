@@ -57,10 +57,10 @@ void LoadFunction(int instruction,struct bit24 *RegisterAddress,struct variable 
 void StoreFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 void CompareFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
 // void IOFunction(int instruction,int *Register_A);
-int  run_sic();
 
-int main(int argc,char *argv[])
-{
+void error(int error_mode);
+
+int main(int argc,char *argv[]){
     int ch; //왜 ch은 int형인가?
     FILE *fp;
     unsigned long count =0;
@@ -164,7 +164,8 @@ int assembler(struct Word *keywords,int index_max){
     while( index < index_max) {
         if(keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line && keywords[index+2].line == keywords[index+3].line){ // 같은 줄에 키워드가 네개 에러 발생!
             printf("instruction format error at line: %d more than three keywords\n", keywords[index].line);
-            break;
+            error(0);
+            return 0; // !Error
         }
         else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
             printf("instruction line with label\n");
@@ -207,18 +208,59 @@ int assembler(struct Word *keywords,int index_max){
             strcpy( variable_list[var_index].name, keywords[index].words);
 
             if( keywords[index+1].type == 27) { //변수 타입 BYTE 얘는 CHAR1 BYTE C'Z' 같은 형식을 사용할 수 있으니 저 c와 '를 검사하는 걸 넣어야한다.
-                variable_list[var_index].ptr = make_var(1);
+
+
+                variable_list[var_index].ptr = make_var(MAX_ARRAY_SIZE);
                 variable_list[var_index].ptr->data=0;
                 variable_list[var_index].data_type = 1;
+                printf("line 213!!!!\n");
 
-                if( data_check( &keywords[index+2].words[0] ) == 2){ // 단일 문자 저장
-                    variable_list[var_index].ptr->data =keywords[index+2].words[2]; // 여기 문제 있음... !PROBLEM
+                int string_end=0;
+                if( keywords[index+2].words[0] == 'c'){
+                    printf("char type indicator c detected\n");
+                    if( keywords[index+2].words[1] == '\'' ){
+                        for(int i=2; keywords[index+2].words[i] != '\0'; i++){
+                            if(keywords[index+2].words[i] == '\''){
 
-                    variable_list[var_index].is_array=0;
+                                string_end=i;
+                                printf("end index found %d",string_end);
+                                break;
+                            }
+                        }
+                        if( string_end >3 ){ // it's a string array!
+                            variable_list[var_index].array_max= string_end-2;
+
+                            variable_list[var_index].is_array = 1;
 
 
-                    printf("BYTE: name:%s value: %c is_array: %d\n",variable_list[var_index].name ,variable_list[var_index].ptr->data,variable_list[var_index].is_array);
+                            for(int i=0; i< variable_list[var_index].array_max ; i++){
+                                char temp ;
+                                printf("!%d.%c!\n",i,keywords[index+2].words[i+2]);
+                                //(variable_list[var_index].ptr + sizeof(struct bit24)*i)->data = temp;
+                            }
+
+                        }
+                        else{ // not a string array
+                            char temp ;
+                            printf("!%c!\n",keywords[index+2].words[2]);
+                            temp= keywords[index+2].words[2];
+                            variable_list[var_index].ptr->data = temp;
+                            variable_list[var_index].is_array = 0;
+                        }
+                    }
+                    else{
+                        error(2);
+                        return 0;
+                    }
                 }
+                else{
+                    error(1);
+                    return 0;
+                }
+
+
+
+            printf("BYTE: name:%s value: %c is_array: %d\n",variable_list[var_index].name ,variable_list[var_index].ptr->data,variable_list[var_index].is_array);
             }
             else if(keywords[index+1].type == 28){  //변수 타입 WORD
                 variable_list[var_index].data_type = 0;
@@ -279,7 +321,7 @@ int assembler(struct Word *keywords,int index_max){
             }
             else if(keywords[index+1].type == 29) { //RESB
                 int temp = atoi(&keywords[index+2].words[0]);
-                variable_list[var_index].ptr = make_var( temp );
+                variable_list[var_index].ptr = make_var( MAX_ARRAY_SIZE);
                 variable_list[var_index].data_type = 1;
 
                 if(temp > 1){
@@ -293,7 +335,7 @@ int assembler(struct Word *keywords,int index_max){
                 }
             else if(keywords[index+1].type == 30){ // RESW
                 int temp = atoi(&keywords[index+2].words[0]);
-                variable_list[var_index].ptr = make_var( temp );
+                variable_list[var_index].ptr = make_var( MAX_ARRAY_SIZE );
                 variable_list[var_index].data_type = 0;
                 if(temp >1){
                     variable_list[var_index].is_array=1;
@@ -509,8 +551,13 @@ int assembler(struct Word *keywords,int index_max){
             // printf(" isarray:%d ", variable_list[var_i].is_array);
             if( variable_list[var_i].is_array == 0){
                 if(variable_list[var_i].data_type ==1){ //if data is char
-                    // variable_list[var_i].ptr->data = 'c';
-                    printf("%s: %d : %d\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data,'c');
+                    /*
+                     variable_list[var_i].ptr->data = 'c';
+                     struct bit24 size_emulation;
+                     size_emulation.data = 255;
+                     */
+                     char output = variable_list[var_i].ptr->data;
+                    printf("%s: %d : %c\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data,output);
                 }
                 else{
                     printf("%s: %d\n",&variable_list[var_i].name[0], variable_list[var_i].ptr->data);
@@ -693,6 +740,17 @@ struct bit24 * make_var(int how_many_word){ // how_many_word 24비트 저장소 
     struct bit24 *pointer;
     pointer = malloc(how_many_word* sizeof(struct bit24));
     return pointer;
+}
+
+void error(int error_mode){
+    switch(error_mode){
+        case 0:
+            printf("4 instructions error");
+        case 1:
+            printf("no char indicator 'c' detected");
+        case 2:
+            printf("no char start indicator \' detected");
+    }
 }
 
 bool num_check(char *address){
