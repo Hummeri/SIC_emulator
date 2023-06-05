@@ -569,10 +569,10 @@ int assembler(struct Word *keywords,int index_max){
 
                     if(variable_list[var_i].data_type ==1){
                         char output = (variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data;
-                        printf("index:%d:%d:%c ",array_i,(variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data,output);
+                        printf("index:%dvalue:%d:%c ",array_i,(variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data,output);
                     }
                     else{
-                        printf("index:%d:%d ",array_i, (variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data );
+                        printf("index:%dvalue:%d ",array_i, (variable_list[var_i].ptr+array_i*sizeof(struct bit24))->data );
                     }
 
                 }
@@ -735,8 +735,9 @@ void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable
         else{
             if(instruction==4) //DIV
                 (RegisterAddress)->data /= ( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
-            else if(instruction==5) // AND
-                (RegisterAddress)->data &=( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
+            else if(instruction==5){ // AND
+                (RegisterAddress)->data &= ( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
+            }
             else if(instruction==6) // OR
                 (RegisterAddress)->data |= ( size_emulation.data & (to_variable->ptr + offset.data*sizeof(struct bit24) )->data );
         }
