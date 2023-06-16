@@ -7,7 +7,7 @@
 #define WORD_MAX_LENGTH 50 //used for max character length of title and variable names. affects max array numbers too because it limts how much the program will actual read in to
 #define MAX_VARIABLE_COUNT 20 //최대 변수 개수
 #define MAX_LABEL_COUNT 20 //라벨 최대 개수
-#define MAX_PROGRAM_INSTRUCTIONS 100 // 명령어 최대 개수
+#define MAX_PROGRAM_INSTRUCTIONS 100 // 명령어 최대 개수 실제로는 프로그래이 읽을 수 있는 단어 개수의 제한이다.
 # define MAX_ARRAY_SIZE 20
 
 int instruction_find(char *check);
@@ -31,12 +31,13 @@ struct variable{
 struct executable{
     int instruction;
     int variable_index;
-    int label_index; // if label index is 0, there is no index.
+    int label_index; // points toward the label's index in the label list
 };
 
 struct label{
     char name[WORD_MAX_LENGTH];
     int to_here;
+    bool valid; // checks if to_here was actually updated, thus checking if this label was actully declared and is pointing somewhere valid
 };
 
 struct bit24{
@@ -49,6 +50,8 @@ struct bit8{
 
 bool num_check(char *address);
 short data_check(char *address2);
+bool var_linker(struct variable *var_list, const int total_var, struct Word * var_name, struct executable * ex_list);
+
 
 struct bit24 * make_var(int how_many_word);
 
@@ -79,7 +82,7 @@ int main(int argc,char *argv[]){
     }
 
 
-    struct Word Program[50];
+    struct Word Program[MAX_PROGRAM_INSTRUCTIONS];
     //struct Word temp;
     int Word_line=0;
     int Word_count=0;
@@ -149,16 +152,17 @@ int assembler(struct Word *keywords,int index_max){
     //title and start and memory start address check
     char title[WORD_MAX_LENGTH];
 
-    if(keywords[0].type == 0)
+    if(keywords[0].type == 0){
         if(strcmp(keywords[1].words,"START")==0 && keywords[0].line == keywords[1].line)
             if(keywords[1].line == keywords[2].line  && num_check( &keywords[2].words[0]) ){
                 printf("valid start\n");
                 strcpy(&title[0],keywords[0].words);
                 //printf("%c\n",title[0]);
             }
-    else
+    }
+    else{
         printf("not valid start\n");
-
+    }
     int index =3;
 
     while( index < index_max) {
@@ -168,7 +172,7 @@ int assembler(struct Word *keywords,int index_max){
             return 0; // !Error
         }
         else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
-            printf("instruction line with label\n");
+            printf("instruction line with three arguments\n");
             // 변수 선언문도 라벨이랑 같은 3개의 문자 형식을 가지고 있으나, word.type에서 다른 형식을 지니고 있는 것이니, 여기서 명령어 타입 검사해서 변수 선언 키워드가 있으면 여기 있는 줄이 변수가 있는 줄로 간주한다.
             //변수들의 타입은 25번이면 END, 그후 30번까지가 변수 영역에 쓰이는 키워드이다.
 
@@ -350,7 +354,7 @@ int assembler(struct Word *keywords,int index_max){
         index +=3;
         var_index++;
         }
-    int variable_total_count = var_index;
+    const int variable_total_count = var_index; //TODO2 if too many variables, exit with error.
     printf("variable_total_count: %d \n=====================\n", variable_total_count);
 
 
@@ -365,16 +369,24 @@ int assembler(struct Word *keywords,int index_max){
     //printf("%d\n",index_max);
         while( index < var_index_start) {
             if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
+                bool label_already_exist=0;
+
                 printf("%d: instruction line with label\n",keywords[index].line);
                  for(int i=0; i< how_many_label_so_far; i++){ // !TODO
                     if(strcmp(&label_list[i].name[0], keywords[index].words ) == 0){ //라벨 이미 있음
-
+                        //strcpy(&label_list[label_index].name[0], keywords[index].words);  //라벨 저장
+                        label_list[label_index].to_here = executable_index; // 라벨 위치 지정
+                        label_index++;
                     }
                 }
 
-                strcpy(&label_list[label_index].name[0], keywords[index].words);  //라벨 저장
-                label_list[label_index].to_here = executable_index;
-                label_index++;
+                if(label_already_exist==0){
+                    strcpy(&label_list[label_index].name[0], keywords[index].words);  //라벨 저장
+                    label_list[label_index].to_here = executable_index; // 라벨 위치 지정
+                    label_index++;
+                    how_many_label_so_far++;
+                }
+
                 executable_list[executable_index].label_index= label_index;// struct executable에서 label_index이 0이면 라벨이 없다고 판단한다. 따라서 1을 더한 값을 여기에다가 저장한다. 나중에 라벨을 찾을 때는 저 인덱스 값을 1 빼준 다음 액세스 해야한다.
                 executable_list[executable_index].instruction = keywords[index+1].type;
 
@@ -422,55 +434,20 @@ int assembler(struct Word *keywords,int index_max){
                 executable_index++;
             }
             else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
+                if( /*keywords[index].*/ 0){ // TODO
+
+                }
+                else{
                 printf("%d: instruction line without label\n",keywords[index].line);
                 executable_list[executable_index].label_index=0;
                 executable_list[executable_index].instruction = keywords[index].type;
-                bool success_flag=0;
-                for(int i=0; i<variable_total_count; i++){
-                    //printf("\n %s %s\n",&variable_list[i].name[0],keywords[index+1].words);
-                    if( strcmp(&variable_list[i].name[0], keywords[index+1].words) == 0 ){
-                        executable_list[executable_index].variable_index = i;
-                        success_flag =1;
-                        // variable_list[i].is_array=0;
-                        //printf("suflag: %d\n",success_flag);
-                        break;
-                    }
-                }
-                //printf("suflag2: %d\n",success_flag);
-                if(success_flag ==0){ // if a normal name was not detected, check if it's array variable
-                    for(int i=0; keywords[index+1].words[i] != '\0' && i < WORD_MAX_LENGTH; i++){ // checking if i is under WORD_MAX_LENGTH may seem unnecessary..
-                        if( keywords[index+1].words[i] == ',' ){
-                            printf("array identifier comma was found at line: %d\n",keywords[index+1].line);
-                            char check_buffer[WORD_MAX_LENGTH];
-                            for(int buffer_i=0; buffer_i < i; buffer_i++){
-                                check_buffer[buffer_i]= keywords[index+1].words[buffer_i]; //copys text value before ',' to buffer fro comparison
-                            }
-                            check_buffer[i]='\0';
 
-
-                            for(int i=0; i<variable_total_count; i++){
-                                if( strcmp(&variable_list[i].name[0], &check_buffer[0]) == 0 ){ // 명령어 줄에 있는 변수 이름이 선언된었는지 확인한다.
-                                    executable_list[executable_index].variable_index = i;
-                                    // variable_list[i].is_array=1;
-                                    success_flag =1;
-                                    printf("array name: %s\n", &check_buffer[0]);
-                                    break;
-                                }
-                                //printf("\n nope list:%s  check_buffer:%s result: %d\n" , &variable_list[i].name[0], &check_buffer[0],strcmp(&variable_list[i].name[0],  &check_buffer[0]) );
-                            }
-                        }
-                    }
-                }
-
-
-                if(success_flag ==0){
-                    printf("variable name not declared! ERROR line: %d\n",keywords[index+1].line);
-                }
-
+                var_linker( variable_list ,variable_total_count, &keywords[index+1], &executable_list[executable_index]);
 
                 index +=2;
                 executable_index++;
             }
+        }
     }
 
     printf("executable count: %d label count: %d variable count: %d\n", executable_index,label_index,variable_total_count);
@@ -594,6 +571,47 @@ int assembler(struct Word *keywords,int index_max){
         // char car = getchar();
     }
     return 0;
+}
+
+bool var_linker(struct variable *var_list, const int total_var, struct Word * keyWord, struct executable * ex_list){
+    bool success_flag=0;
+    for(int i=0; i< total_var; i++){
+        if( strcmp(&var_list[i].name[0], keyWord->words) == 0 ){
+            ex_list->variable_index = i;
+            success_flag =1;
+            break;
+        }
+    }
+    if(success_flag ==0){ // if a normal name was not detected, check if it's array variable
+        for(int i=0; keyWord->words[i] != '\0' && i < WORD_MAX_LENGTH; i++){
+            if( keyWord->words[i] == ',' ){
+                printf("array identifier comma was found at line: %d\n",keyWord->line);
+                char check_buffer[WORD_MAX_LENGTH];
+                for(int buffer_i=0; buffer_i < i; buffer_i++){
+                    check_buffer[buffer_i]= keyWord->words[buffer_i]; //copys text value before ',' to buffer fro comparison
+                }
+                check_buffer[i]='\0';
+
+                for(int i=0; i<total_var; i++){
+                    if( strcmp( &var_list[i].name[0], &check_buffer[0]) == 0 ){ // 명령어 줄에 있는 변수 이름이 선언된었는지 확인한다.
+                        ex_list->variable_index = i;
+                        success_flag =1;
+                        printf("array name: %s\n", &check_buffer[0]);
+                        break;
+                    }
+
+                }
+            }
+        }
+    }
+
+
+    if(success_flag ==0){
+        printf("variable name not declared! ERROR line: %d\n",keyWord->line);
+    }
+
+
+return success_flag;
 }
 
 
