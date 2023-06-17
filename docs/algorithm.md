@@ -72,32 +72,3 @@ if 프로그램 배열의 첬번째 항목이 명령어가 아니라면
 	WORD 1-워드의 상수를 생성. 1 바이트의 메모리를 확보하고 명시된 상수값을 저장함
 	RESB 데이터 영역(변수)을 위해 명시된 바이트 수만큼 메모리를 확보함
 	RESW 데이터 영역(변수)을 위해 명시된 워드 수만큼 메모리를 확보함
-
-
-
-
- type: %d, line: %d
-
- ,Program[index].type),Program[index].line
-
-struct Word{
-    char words[20]; //insruction buffer gets flushed here
-    int type; // 0이면 value, 1~25 사이의 값은 명령어, 26은 라벨, 27 제목 값이다.
-    int line; //몇 번째 줄에 값이 있는지 나타낸다.
-    }
-
-            if (instruction_find(&instruction_buffer[0]) && get_val==0 ){
-                valid_instruc=1;
-                get_val=1;
-                instruc_char_index=0;
-            }
-            else if(valid_instruc && get_val){
-                valid_instruc=0;
-                get_val=0;
-                val_buffer_index=0;
-                printf("that was a value\n");
-            }
-            else{
-                printf("that was not a valid instruction\n");
-            }
-            instruc_char_index=0;
