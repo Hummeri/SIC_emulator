@@ -374,7 +374,7 @@ int assembler(struct Word *keywords,int index_max){
     }
 
 
-    printf("enter anykey to continue\n프로그램을 시작하려면 아무키나 입력하기\n");
+      printf("enter anykey to continue\n");
     char ch = getchar(); // make program stop here.
 
     //인제 프로그램을 실행하는 코드
