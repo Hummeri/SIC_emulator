@@ -307,15 +307,18 @@ int assembler(struct Word *keywords,int index_max){
 
     //printf("%d\n",index_max);
     while( index < var_index_start) {
+        printf("here label_count value is : %d\n", label_count);
         if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
             // executable_list[executable_index].label_index= label_index;
-            printf("%d: instruction line with label\n",keywords[index].line);
+            printf("%d: instruction line with label",keywords[index].line);
             executable_list[executable_index].instruction = keywords[index+1].type;
 
             if(isJunction(keywords[index].type) ){
+                printf(" instruction is junction type\n");
                 label_linker(label_list, &label_count, &keywords[index], &executable_list[executable_index], executable_index, 1, 1);
             }
             else{
+                printf("instruction is not junction type\n");
                 label_linker(label_list, &label_count, &keywords[index], &executable_list[executable_index], executable_index, 0, 1);
                 var_linker(variable_list,variable_total_count,&keywords[index+2],&executable_list[executable_index]);
 
@@ -327,14 +330,16 @@ int assembler(struct Word *keywords,int index_max){
             executable_index++;
         }
         else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
-            printf("%d: instruction line without label\n",keywords[index].line);
+            printf("%d: instruction line without label",keywords[index].line);
             executable_list[executable_index].instruction = keywords[index].type;
 
-            if( isJunction(keywords[index].type) ){ // TODO if the instruction is a junction instruction, than the second argument is not a variable, but a label
+            if( isJunction(keywords[index].type) ){ // TODOed if the instruction is a junction instruction, than the second argument is not a variable, but a label
+                printf(" instruction is junction type\n");
                 label_linker(label_list, &label_count, &keywords[index], &executable_list[executable_index], executable_index, 1, 0);
 
             }
             else{ // not a junction instruction
+                printf("instruction is not junction type\n");
                 var_linker( variable_list ,variable_total_count, &keywords[index+1], &executable_list[executable_index]);
             }
 
@@ -352,18 +357,19 @@ int assembler(struct Word *keywords,int index_max){
     const int label_total_count = label_count;
     const int executable_total_count=executable_index;
 
-    /*
+
     for(int i=0;i<executable_total_count; i++){
-        if(executable_list[i].label_index ==0){ //두 줄 짜리 명령어
+
+        if( isJunction(executable_list[i].instruction) ){ // two argument instruction with junction command
+            printf(" instruction type: %d label index: %d to_here value: %d \n",executable_list[i].instruction,executable_list[i].label_index,label_list[executable_list[i].label_index].to_here);
+        }
+        else{
             printf(" instruction type: %d variable index: %d\n",executable_list[i].instruction,executable_list[i].variable_index);
         }
-        else{ //라벨이 있는 세 줄짜리 명령어
-            printf("label index: %d index in label: %d  instruction type: %d variable index: %d\n",executable_list[i].label_index,label_list[executable_list[i].label_index-1].to_here,executable_list[i].instruction,executable_list[i].variable_index);
-            // label_list[executable_list[i].label_index-1].to_here 에서 보면 executable_list[i].label_index값에 -1이 들어가 있는데, 이는 struct executable가 label_index값이 0일때 라벨이 없다고 판단해서 그렇다.
-        }
+
     }
 
-    */
+
 
     char ch = getchar(); // make program stop here.
 
@@ -486,6 +492,7 @@ bool isJunction(int type){ // junction functions are type defined as 17~22 value
 }
 
 void label_linker(struct label *label_list,int * label_count ,struct Word * keyWord, struct executable * ex_list,const int executable_index,bool junction_mode,bool argument_mode){
+    // printf("got label_count value is : %d\n", *label_count);
 
 
     if(argument_mode == 1){ // if three worded argument, update label list and make label point this
@@ -506,11 +513,12 @@ void label_linker(struct label *label_list,int * label_count ,struct Word * keyW
                 printf("error at line %d\n",keyWord->line);
                 error(6);
             }
-
+            printf("\n%s\n",keyWord->words);
             strcpy(label_list[*label_count].name,keyWord->words);
             label_list[*label_count].to_here = executable_index;
             label_list[*label_count].valid =1;
-            *label_count++;
+            *label_count += 1;
+            printf(" label_count value is : %d\n", *label_count);
         }
     }
 
@@ -528,10 +536,11 @@ void label_linker(struct label *label_list,int * label_count ,struct Word * keyW
                 printf("error at line %d\n",keyWord->line);
                 error(6);
             }
-
-            strcpy(label_list[*label_count].name,keyWord->words);
+            printf("\n%s\n",keyWord[1+argument_mode].words);
+            strcpy(label_list[*label_count].name,keyWord[1+argument_mode].words);
             ex_list[executable_index].label_index = *label_count;
-            *label_count++;
+            *label_count +=1;
+            printf(" label_count value is : %d\n", *label_count);
         }
     }
 
@@ -743,21 +752,28 @@ struct bit24 * make_var(int how_many_word){ // how_many_word 24비트 저장소 
 void error(int error_mode){
     switch(error_mode){
         case 0:
-            printf("4 instructions error");
+            printf("4 instructions error\n");
+            break;
         case 1:
-            printf("no char indicator 'c' detected");
+            printf("no char indicator 'c' detected\n");
+            break;
         case 2:
-            printf("no char start indicator \' detected");
+            printf("no char start indicator \' detected\n");
+            break;
         case 3:
             printf("ERROR no END keyword found!\n");
+            break;
         case 4:
             printf("program instruction mismatch error! instruction is not aligned properly\n");
+            break;
         case 5:
             printf("variable name was not found\n");
+            break;
         case 6:
             printf("Label exceeded MAX_LABEL_COUNT VALUE!\n current MAX_LABEL_COUNT value is %d\n",MAX_LABEL_COUNT);
+            break;
     }
-
+    // printf("reached here\n");
     exit(error_mode);
 }
 
