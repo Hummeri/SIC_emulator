@@ -416,32 +416,42 @@ int assembler(struct Word *keywords,int index_max){
             CompareFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
         else if(executable_list[i].instruction>16 && executable_list[i].instruction < 23){ // finally, junction functions! 17~22
+            printf("!!! label index: %d label to_here %d\n",executable_list[i].label_index, label_list[executable_list[i].label_index].to_here);
+
             if(executable_list[i].instruction == 17){ // J
                 i=label_list[executable_list[i].label_index].to_here;
+                i -=1; // this is neccessary because the for loop adds 1 to i after the end of the loop
             }
             else if(executable_list[i].instruction == 18){ // JEQ
                 if( (RegisterList+sizeof(struct bit24)*3)->data == 0){
                     i=label_list[executable_list[i].label_index].to_here;
+                    i -=1; // this is neccessary because the for loop adds 1 to i after the end of the loop
                 }
             }
             else if(executable_list[i].instruction == 19){ // JGT
                 if( (RegisterList+sizeof(struct bit24)*3)->data == 1){
                     i=label_list[executable_list[i].label_index].to_here;
+                    i -=1; // this is neccessary because the for loop adds 1 to i after the end of the loop
                 }
             }
             else if(executable_list[i].instruction == 20){ // JLT
                 if( (RegisterList+sizeof(struct bit24)*3)->data == 2){
                     i=label_list[executable_list[i].label_index].to_here;
+                    i -=1; // this is neccessary because the for loop adds 1 to i after the end of the loop
                 }
             }
             else if(executable_list[i].instruction == 21){ // J SUB
                     i=label_list[executable_list[i].label_index].to_here;
+                    i -=1; // this is neccessary because the for loop adds 1 to i after the end of the loop
                     return_index=i;
                 }
                 else{ // R SUB
+
                     i= return_index;
                 }
-                printf("label index: %d label line index %d\n",label_list[executable_list[i].label_index],label_list[executable_list[i].label_index].to_here);
+            printf("now points here: %d\n",i);
+
+
             }
 
         printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i/*+1*/ ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
@@ -483,7 +493,7 @@ int assembler(struct Word *keywords,int index_max){
             }
         }
         printf("\n");
-        // char car = getchar();
+        // char car = getchar(); // stop the instruction loop for inspection
     }
     return 0;
 }
@@ -532,7 +542,7 @@ void label_linker(struct label *label_list,int * label_count ,struct Word * keyW
     if(junction_mode == 1){ // if command is a junction command
         bool label_found =0;
         for(int i=0;i< *label_count; i++){ // look for label
-            printf("strcmp value: %s:%s %d\n",label_list[i].name,keyWord[1+argument_mode].words, strcmp(label_list[i].name, keyWord[1+argument_mode].words ) );
+            // printf("strcmp value: %s:%s %d\n",label_list[i].name,keyWord[1+argument_mode].words, strcmp(label_list[i].name, keyWord[1+argument_mode].words ) );
 
             if(strcmp(label_list[i].name, keyWord[1+argument_mode].words )==0 ){ // keyWord[1+argument_mode] this code makes the keyWord point towards the label argument in both three and two argument cases
                 label_found = 1;
