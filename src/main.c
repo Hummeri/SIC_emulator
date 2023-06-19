@@ -374,7 +374,7 @@ int assembler(struct Word *keywords,int index_max){
     }
 
 
-
+    printf("enter anykey to continue\n프로그램을 시작하려면 아무키나 입력하기\n");
     char ch = getchar(); // make program stop here.
 
     //인제 프로그램을 실행하는 코드
@@ -397,6 +397,8 @@ int assembler(struct Word *keywords,int index_max){
 
     // RegisterList 0 is accumulator register, 1 is index register, 2 is linkage register, 3 is status word
     PC= 0;
+    int junction_line_storage=0;
+    bool junction_command =0;
 
 
     printf("\nSIC code now executes!\n===============================\n");
@@ -416,7 +418,9 @@ int assembler(struct Word *keywords,int index_max){
             CompareFunction(executable_list[i].instruction, RegisterList , &variable_list[executable_list[i].variable_index],&executable_list[i]);
         }
         else if(executable_list[i].instruction>16 && executable_list[i].instruction < 23){ // finally, junction functions! 17~22
-            printf("!!! label index: %d label to_here %d\n",executable_list[i].label_index, label_list[executable_list[i].label_index].to_here);
+            // printf("!!! label index: %d label to_here %d\n",executable_list[i].label_index, label_list[executable_list[i].label_index].to_here);
+            junction_line_storage =i;
+            junction_command=1;
 
             if(executable_list[i].instruction == 17){ // J
                 i=label_list[executable_list[i].label_index].to_here;
@@ -441,20 +445,28 @@ int assembler(struct Word *keywords,int index_max){
                 }
             }
             else if(executable_list[i].instruction == 21){ // J SUB
-                    i=label_list[executable_list[i].label_index].to_here;
-                    i -=1; // this is neccessary because the for loop adds 1 to i after the end of the loop
-                    return_index=i;
-                }
-                else{ // R SUB
+                return_index=i;
+                i=label_list[executable_list[i].label_index].to_here;
+                i -=1; // this is neccessary because the for loop adds 1 to i after the end of the loop
 
-                    i= return_index;
-                }
+            }
+            else{ // R SUB
+                i= return_index;
+                i -=1;
+            }
             printf("now points here: %d\n",i);
 
 
             }
 
-        printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i/*+1*/ ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
+            if(junction_command ==1){
+                printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", junction_line_storage ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
+                junction_command =0;
+            }
+            else{
+                printf("executed line: %d REGISTER STATUS:\nRa: %d Rx: %d Rl: %d PC: %d SW: %d\n", i/*+1*/ ,(RegisterList+sizeof(struct bit24)*0)->data,(RegisterList+sizeof(struct bit24)*1)->data,(RegisterList+sizeof(struct bit24)*2)->data,PC,(RegisterList+sizeof(struct bit24)*3)->data);
+            }
+
 
         printf("VARIABLE STATUS:\n");
         for(int var_i=0; var_i < variable_total_count; var_i++ ){
