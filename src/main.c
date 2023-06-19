@@ -307,10 +307,10 @@ int assembler(struct Word *keywords,int index_max){
 
     //printf("%d\n",index_max);
     while( index < var_index_start) {
-        printf("here label_count value is : %d\n", label_count);
+        // printf("here label_count value is : %d\n", label_count);
         if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
             // executable_list[executable_index].label_index= label_index;
-            printf("%d: instruction line with label",keywords[index].line);
+            printf("%d: instruction line with label\n",keywords[index].line);
             executable_list[executable_index].instruction = keywords[index+1].type;
 
             if(isJunction(keywords[index].type) ){
@@ -330,7 +330,7 @@ int assembler(struct Word *keywords,int index_max){
             executable_index++;
         }
         else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
-            printf("%d: instruction line without label",keywords[index].line);
+            printf("%d: instruction line without label\n",keywords[index].line);
             executable_list[executable_index].instruction = keywords[index].type;
 
             if( isJunction(keywords[index].type) ){ // TODOed if the instruction is a junction instruction, than the second argument is not a variable, but a label
@@ -359,14 +359,18 @@ int assembler(struct Word *keywords,int index_max){
 
 
     for(int i=0;i<executable_total_count; i++){
-
-        if( isJunction(executable_list[i].instruction) ){ // two argument instruction with junction command
+        printf(": %d",i);
+        if( isJunction(executable_list[i].instruction) ){
             printf(" instruction type: %d label index: %d to_here value: %d \n",executable_list[i].instruction,executable_list[i].label_index,label_list[executable_list[i].label_index].to_here);
         }
         else{
             printf(" instruction type: %d variable index: %d\n",executable_list[i].instruction,executable_list[i].variable_index);
         }
 
+    }
+    printf("=================label_list\n");
+    for(int i=0; i< label_total_count; i++){
+        printf("label name: %s label index: %d to_here: %d\n",label_list[i].name,i,label_list[i].to_here);
     }
 
 
@@ -505,6 +509,7 @@ void label_linker(struct label *label_list,int * label_count ,struct Word * keyW
             if(strcmp(label_list[i].name, keyWord->words )==0){ // label found!
                 label_found=1;
                 label_list[i].to_here= executable_index; // if label was found,it means label was already declared. thus, just update its to_here value
+                printf("!!exe index: %d\n", executable_index);
             }
         }
 
@@ -513,22 +518,27 @@ void label_linker(struct label *label_list,int * label_count ,struct Word * keyW
                 printf("error at line %d\n",keyWord->line);
                 error(6);
             }
-            printf("\n%s\n",keyWord->words);
+            printf("\n=====%s=======\n",keyWord->words);
             strcpy(label_list[*label_count].name,keyWord->words);
             label_list[*label_count].to_here = executable_index;
             label_list[*label_count].valid =1;
             *label_count += 1;
             printf(" label_count value is : %d\n", *label_count);
+            printf("exe index: %d\n", executable_index);
+            // printf(" label_count value is : %d %d %d\n", *label_count,ex_list[executable_index].label_index, label_list[ex_list[executable_index].label_index].to_here );
         }
     }
 
     if(junction_mode == 1){ // if command is a junction command
         bool label_found =0;
         for(int i=0;i< *label_count; i++){ // look for label
+            printf("strcmp value: %s:%s %d\n",label_list[i].name,keyWord[1+argument_mode].words, strcmp(label_list[i].name, keyWord[1+argument_mode].words ) );
+
             if(strcmp(label_list[i].name, keyWord[1+argument_mode].words )==0 ){ // keyWord[1+argument_mode] this code makes the keyWord point towards the label argument in both three and two argument cases
                 label_found = 1;
-                ex_list[executable_index].label_index=i;
-                // ex_list[excutable_index].three_arguments=
+                ex_list->label_index=i;
+                printf("ex got label index %d \n",ex_list->label_index);
+
             }
         }
         if(label_found == 0){ // make new label, but don't update to_here value. just copy string
@@ -536,11 +546,12 @@ void label_linker(struct label *label_list,int * label_count ,struct Word * keyW
                 printf("error at line %d\n",keyWord->line);
                 error(6);
             }
+
             printf("\n%s\n",keyWord[1+argument_mode].words);
             strcpy(label_list[*label_count].name,keyWord[1+argument_mode].words);
-            ex_list[executable_index].label_index = *label_count;
+            ex_list->label_index = *label_count;
             *label_count +=1;
-            printf(" label_count value is : %d\n", *label_count);
+            printf(" label_count value is : %d ex_list.label_index: %d label_index.to_here %d\n", *label_count,ex_list->label_index, label_list[ex_list->label_index].to_here );
         }
     }
 
