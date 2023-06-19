@@ -3,67 +3,7 @@
 #include<string.h> //used for strcmp() and strcmp()
 #include<ctype.h> //used for isupper()
 #include<stdbool.h> //for bool flags
-
-#define WORD_MAX_LENGTH 50 //used for max character length of title and variable names. affects max array numbers too because it limts how much the program will actual read in to
-#define MAX_VARIABLE_COUNT 20 //최대 변수 개수
-#define MAX_LABEL_COUNT 20 //라벨 최대 개수
-#define MAX_PROGRAM_INSTRUCTIONS 100 // 명령어 최대 개수 실제로는 프로그래이 읽을 수 있는 단어 개수의 제한이다.
-# define MAX_ARRAY_SIZE 20
-
-int instruction_find(char *check);
-//int program_initiate( char*program_name1,);
-
-struct Word{
-    char words[WORD_MAX_LENGTH]; //insruction buffer gets flushed here
-    int type; // 0이면 value, 1~25 사이의 값은 명령어, 26은 라벨, 27 제목 값이다.
-    int line; //몇 번째 줄에 값이 있는지 나타낸다.
-    };
-int assembler(struct Word *keywords,int index_max); //make sure that functions using struct is declared after the declaration of struct
-
-struct variable{
-    char name[WORD_MAX_LENGTH];
-    struct bit24* ptr; // for char variables, the 8bit memory size is "emulated"
-    bool is_array;
-    int array_max;
-    bool data_type;
-};
-
-struct executable{
-    int instruction;
-    int variable_index;
-    int label_index; // points toward the label's index in the label list
-    bool has_label; // identifier for instructions with labels, used to check if the junction is indeed jumping to a valid labeled line, and also used when printing the instrucions
-};
-
-struct label{
-    char name[WORD_MAX_LENGTH];
-    int to_here;
-    bool valid; // checks if to_here was actually updated, thus checking if this label was actully declared and is pointing somewhere valid
-};
-
-struct bit24{
-    unsigned int data : 24;
-};
-
-struct bit8{
-    unsigned int data : 8;
-};
-
-bool num_check(char *address);
-short data_check(char *address2);
-bool isJunction(int type);
-void var_linker(struct variable *var_list, const int total_var, struct Word * var_name, struct executable * ex_list);
-
-
-struct bit24 * make_var(int how_many_word);
-
-void MathCalculate(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-void LoadFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-void StoreFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-void CompareFunction(int instruction,struct bit24 *RegisterAddress,struct variable *to_variable,struct executable * to_executable);
-// void IOFunction(int instruction,int *Register_A);
-
-void error(int error_mode);
+#include"feature.h" // all functions are declared here
 
 int main(int argc,char *argv[]){
     int ch; //왜 ch은 int형인가?
@@ -362,29 +302,36 @@ int assembler(struct Word *keywords,int index_max){
     struct label label_list[MAX_LABEL_COUNT];
     struct executable executable_list[MAX_PROGRAM_INSTRUCTIONS];
     int executable_index=0;
-    int label_index=0;
-    int how_many_label_so_far=0;
+    int label_count=0;
+    // int how_many_label_so_far=0;
 
     //printf("%d\n",index_max);
     while( index < var_index_start) {
         if( keywords[index].line == keywords[index+1].line && keywords[index+1].line == keywords[index+2].line){ // 다음 명령어 세개가 같은 줄에 있다.
-
             // executable_list[executable_index].label_index= label_index;
-
+            printf("%d: instruction line with label\n",keywords[index].line);
             executable_list[executable_index].instruction = keywords[index+1].type;
 
-            var_linker(variable_list,variable_total_count,&keywords[index+2],&executable_list[executable_index]);
+            if(isJunction(keywords[index].type) ){
+                label_linker(label_list, &label_count, &keywords[index], &executable_list[executable_index], executable_index, 1, 1);
+            }
+            else{
+                label_linker(label_list, &label_count, &keywords[index], &executable_list[executable_index], executable_index, 0, 1);
+                var_linker(variable_list,variable_total_count,&keywords[index+2],&executable_list[executable_index]);
+
+            }
+
+
 
             index += 3;
             executable_index++;
         }
         else if( keywords[index].line == keywords[index+1].line && keywords[index+1].line +1  == keywords[index+2].line){ // 다음 두 명령어가 같은 줄에 있고, 다음 명령어는 다음 줄에 있다.
             printf("%d: instruction line without label\n",keywords[index].line);
-            // executable_list[executable_index].label_index=0;
             executable_list[executable_index].instruction = keywords[index].type;
 
             if( isJunction(keywords[index].type) ){ // TODO if the instruction is a junction instruction, than the second argument is not a variable, but a label
-
+                label_linker(label_list, &label_count, &keywords[index], &executable_list[executable_index], executable_index, 1, 0);
 
             }
             else{ // not a junction instruction
@@ -399,10 +346,13 @@ int assembler(struct Word *keywords,int index_max){
         }
     }
 
-    printf("executable count: %d label count: %d variable count: %d\n", executable_index,label_index,variable_total_count);
-    const int label_total_count = label_index;
+
+
+    printf("executable count: %d label count: %d variable count: %d\n", executable_index,label_count,variable_total_count);
+    const int label_total_count = label_count;
     const int executable_total_count=executable_index;
 
+    /*
     for(int i=0;i<executable_total_count; i++){
         if(executable_list[i].label_index ==0){ //두 줄 짜리 명령어
             printf(" instruction type: %d variable index: %d\n",executable_list[i].instruction,executable_list[i].variable_index);
@@ -412,6 +362,11 @@ int assembler(struct Word *keywords,int index_max){
             // label_list[executable_list[i].label_index-1].to_here 에서 보면 executable_list[i].label_index값에 -1이 들어가 있는데, 이는 struct executable가 label_index값이 0일때 라벨이 없다고 판단해서 그렇다.
         }
     }
+
+    */
+
+    char ch = getchar(); // make program stop here.
+
     //인제 프로그램을 실행하는 코드
     //먼저, 레지스터를 생성한다.
     int PC; // program counter
@@ -529,6 +484,59 @@ bool isJunction(int type){ // junction functions are type defined as 17~22 value
     else
         return 0;
 }
+
+void label_linker(struct label *label_list,int * label_count ,struct Word * keyWord, struct executable * ex_list,const int executable_index,bool junction_mode,bool argument_mode){
+
+
+    if(argument_mode == 1){ // if three worded argument, update label list and make label point this
+        // pass first keyword to keyWord
+        // than, access lebels by keyWord,  keyWord[2]
+
+        bool label_found =0;
+
+        for(int i=0;i< *label_count;i++){ // look for label
+            if(strcmp(label_list[i].name, keyWord->words )==0){ // label found!
+                label_found=1;
+                label_list[i].to_here= executable_index; // if label was found,it means label was already declared. thus, just update its to_here value
+            }
+        }
+
+        if(label_found == 0){ // label was not found, make new label
+            if(*label_count+1  > MAX_LABEL_COUNT){
+                printf("error at line %d\n",keyWord->line);
+                error(6);
+            }
+
+            strcpy(label_list[*label_count].name,keyWord->words);
+            label_list[*label_count].to_here = executable_index;
+            label_list[*label_count].valid =1;
+            *label_count++;
+        }
+    }
+
+    if(junction_mode == 1){ // if command is a junction command
+        bool label_found =0;
+        for(int i=0;i< *label_count; i++){ // look for label
+            if(strcmp(label_list[i].name, keyWord[1+argument_mode].words )==0 ){ // keyWord[1+argument_mode] this code makes the keyWord point towards the label argument in both three and two argument cases
+                label_found = 1;
+                ex_list[executable_index].label_index=i;
+                // ex_list[excutable_index].three_arguments=
+            }
+        }
+        if(label_found == 0){ // make new label, but don't update to_here value. just copy string
+            if(*label_count+1  > MAX_LABEL_COUNT){ // check if adding a new label will cause overflow
+                printf("error at line %d\n",keyWord->line);
+                error(6);
+            }
+
+            strcpy(label_list[*label_count].name,keyWord->words);
+            ex_list[executable_index].label_index = *label_count;
+            *label_count++;
+        }
+    }
+
+}
+
 
 void var_linker(struct variable *var_list, const int total_var, struct Word * keyWord, struct executable * ex_list){
     bool success_flag=0;
@@ -746,6 +754,8 @@ void error(int error_mode){
             printf("program instruction mismatch error! instruction is not aligned properly\n");
         case 5:
             printf("variable name was not found\n");
+        case 6:
+            printf("Label exceeded MAX_LABEL_COUNT VALUE!\n current MAX_LABEL_COUNT value is %d\n",MAX_LABEL_COUNT);
     }
 
     exit(error_mode);

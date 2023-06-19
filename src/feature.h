@@ -1,3 +1,15 @@
+/*==============================================
+ * this file includes all structure declarations and other constant declrations
+ * also includes all functions used.
+ *
+ ===============================================*/
+
+#define WORD_MAX_LENGTH 50 //used for max character length of title and variable names. affects max array numbers too because it limts how much the program will actual read into
+#define MAX_VARIABLE_COUNT 20 //최대 변수 개수
+#define MAX_LABEL_COUNT 20 //라벨 최대 개수
+#define MAX_PROGRAM_INSTRUCTIONS 100 // 명령어 최대 개수 실제로는 프로그래이 읽을 수 있는 단어 개수의 제한이다.
+# define MAX_ARRAY_SIZE 20
+
 int instruction_find(char *check);
 //int program_initiate( char*program_name1,);
 
@@ -20,7 +32,7 @@ struct executable{
     int instruction;
     int variable_index;
     int label_index; // points toward the label's index in the label list
-    bool has_label; // identifier for instructions with labels, used to check if the junction is indeed jumping to a valid labeled line, and also used when printing the instrucions
+    bool three_arguments; // identifier for instructions with labels, TRUE when instruction is a three word instruction, used for printing in debugg
 };
 
 struct label{
@@ -40,7 +52,11 @@ struct bit8{
 bool num_check(char *address);
 short data_check(char *address2);
 bool isJunction(int type);
-void var_linker(struct variable *var_list, const int total_var, struct Word * var_name, struct executable * ex_list);
+void var_linker(struct variable *var_list, const int total_var, struct Word * keyWord, struct executable * ex_list);
+
+void label_linker(struct label *label_list,int * label_count ,struct Word * keyWord, struct executable *ex_list,const int executable_index, bool junction_mode,bool argument_mode);
+//  junction_mode 0 for non junction instruction 1 for instruction with junction
+// argument_mode 0 for two argument instruction 1 for three argument instruction
 
 
 struct bit24 * make_var(int how_many_word);
